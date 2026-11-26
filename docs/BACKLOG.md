@@ -44,3 +44,12 @@
 - **Cardio tracking**: minutes today / this week (Health Connect exercise sessions
   + manual entry), optional scheduled cardio.
 - **⋯ menu per meal**: copy (to today/another day), save as meal, clear.
+
+## Equipment / exercise editor
+- Rename "Smith machine" → "Smith" in the exercise editor.
+- Settings › Attachments opens a page to pick the equipment type first (Cable, Bar, …).
+- Edit equipment subtypes in Settings (bar types, pulleys, brands/series, …).
+- Attachments per equipment type; if a type has none, hide the attachment field
+  in the exercise editor/builder.
+- Live workout exercise header: name / equipment / sub-equipment / attachment, each on its own line.
+- Cardio (also listed under Layout / UX).
