@@ -33,6 +33,8 @@ export function applyTheme(theme: ThemeName, accent: Accent) {
   Object.assign(colors, BASES[theme] ?? BASES.dark);
   colors.accent = ACCENTS[accent] ?? ACCENTS.blue;
   colors.accentDim = mixHex(colors.accent, colors.bg, 0.72);
+  // Positive states (calories left, resume, completed sets, goal reached) follow the accent too.
+  colors.success = colors.accent;
 }
 
 /** Colors for settings-row icon tiles. */

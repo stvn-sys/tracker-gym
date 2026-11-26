@@ -38,8 +38,8 @@ export function SleepCard() {
           <Text style={styles.dim}>Duration{dur ? ` · ${prettyDate(dur.date)}` : ''}</Text>
         </View>
       </View>
-      {dur && data && <Bar value={dur.value / data.goals.sleepMin} color="#8B7CF6" />}
-      {data && data.dur.length > 1 && <LineChart points={data.dur.map((p, i) => ({ x: i, y: p.value / 60 }))} height={46} color="#8B7CF6" />}
+      {dur && data && <Bar value={dur.value / data.goals.sleepMin} color={colors.accent} />}
+      {data && data.dur.length > 1 && <LineChart points={data.dur.map((p, i) => ({ x: i, y: p.value / 60 }))} height={46} color={colors.accent} />}
       <EntryModal
         visible={open}
         title="Log last night's sleep"

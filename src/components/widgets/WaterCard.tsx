@@ -10,7 +10,6 @@ import { EntryModal, num } from '../EntryModal';
 import { styles } from '../ui';
 import { Bar, useLoad, WidgetCard } from './common';
 
-const WATER = '#38BDF8';
 const fmtMl = (ml: number) => (ml >= 1000 ? `${Math.round(ml / 100) / 10} L` : `${Math.round(ml)} ml`);
 
 /** Tap a bottle to log it. Shows how many of each bottle are left to hit the goal. */
@@ -40,13 +39,13 @@ export function WaterCard({ date }: { date: string }) {
           {remaining > 0 ? `${fmtMl(remaining)} to go` : 'Goal reached 💧'}
         </Text>
       </View>
-      <Bar value={Math.min(1, data.total / goal)} color={WATER} height={10} />
+      <Bar value={Math.min(1, data.total / goal)} color={colors.accent} height={10} />
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {data.bottles.map((b) => (
           <Pressable key={b.id} onPress={async () => { await logWater(db, date, b.ml); bump(); }} onLongPress={() => removeBottle(b.id, b.name)}
             style={{ flexGrow: 1, minWidth: '45%', padding: 10, borderRadius: 12, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border }}>
-            <Text style={{ color: WATER, fontWeight: '800' }}>+ {fmtMl(b.ml)}</Text>
+            <Text style={{ color: colors.accent, fontWeight: '800' }}>+ {fmtMl(b.ml)}</Text>
             <Text style={{ color: colors.text, fontSize: 13 }}>{b.name}</Text>
             {remaining > 0 && (
               <Text style={{ color: colors.textDim, fontSize: 12 }}>{bottlesToGoal(remaining, b.ml)}× to hit goal</Text>

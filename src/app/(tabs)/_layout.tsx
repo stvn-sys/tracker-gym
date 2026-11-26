@@ -1,10 +1,11 @@
-import { Text, View, type ColorValue } from 'react-native';
+import { View, type ColorValue } from 'react-native';
+import { Icon, type IconName } from '../../components/Icon';
 import { BottomTabBar, Tabs, type BottomTabBarProps } from 'expo-router/js-tabs';
 import { SubTabProvider, SubTabRow } from '../../components/SubTabs';
 import { colors } from '../../theme/colors';
 
-function icon(glyph: string) {
-  const TabIcon = ({ color }: { color: ColorValue }) => <Text style={{ color, fontSize: 18 }}>{glyph}</Text>;
+function icon(name: IconName) {
+  const TabIcon = ({ color }: { color: ColorValue }) => <Icon name={name} size={24} color={String(color)} />;
   return TabIcon;
 }
 
@@ -36,11 +37,11 @@ export default function TabsLayout() {
           sceneStyle: { backgroundColor: colors.bg },
         }}
       >
-        <Tabs.Screen name="fitness" options={{ title: 'Fitness', tabBarIcon: icon('🏋') }} />
-        <Tabs.Screen name="food" options={{ title: 'Nutrition', tabBarIcon: icon('🍽') }} />
-        <Tabs.Screen name="index" options={{ title: 'Today', tabBarIcon: icon('☀') }} />
-        <Tabs.Screen name="health" options={{ title: 'Health', tabBarIcon: icon('♥') }} />
-        <Tabs.Screen name="settings" options={{ title: 'Settings', tabBarIcon: icon('⚙') }} />
+        <Tabs.Screen name="fitness" options={{ title: 'Fitness', tabBarIcon: icon('dumbbell') }} />
+        <Tabs.Screen name="food" options={{ title: 'Nutrition', tabBarIcon: icon('food') }} />
+        <Tabs.Screen name="index" options={{ title: 'Today', tabBarIcon: icon('sun') }} />
+        <Tabs.Screen name="health" options={{ title: 'Health', tabBarIcon: icon('heart') }} />
+        <Tabs.Screen name="settings" options={{ title: 'Settings', tabBarIcon: icon('gear') }} />
       </Tabs>
     </SubTabProvider>
   );

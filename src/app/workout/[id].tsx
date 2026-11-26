@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { useKeepAwake } from 'expo-keep-awake';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { restAlert } from '../../components/alerts';
 import { usePrefs } from '../../components/Prefs';
 import { showAlert } from '../../components/Dialog';
@@ -347,9 +347,14 @@ export default function ActiveWorkout() {
   );
 }
 
-/** Keeps the screen on while mounted (hooks cannot be conditional, so this wraps the hook). */
+/** Keeps the screen on while mounted. */
 function KeepAwake() {
-  useKeepAwake();
+  useEffect(() => {
+    const tag = 'workout';
+    // Errors are ignored: some browsers refuse a wake lock, and leaving quickly can cancel it.
+    activateKeepAwakeAsync(tag).catch(() => {});
+    return () => { deactivateKeepAwake(tag).catch(() => {}); };
+  }, []);
   return null;
 }
 
