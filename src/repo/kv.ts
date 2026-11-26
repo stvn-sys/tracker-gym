@@ -23,10 +23,11 @@ export interface Goals {
   waterMl: number;
   steps: number;
   sleepMin: number;
+  cardioMinWeek: number;
 }
 
 export const DEFAULT_GOALS: Goals = {
-  calories: 2500, proteinG: 160, fatG: 80, carbsG: 280, waterMl: 2500, steps: 10000, sleepMin: 480,
+  calories: 2500, proteinG: 160, fatG: 80, carbsG: 280, waterMl: 2500, steps: 10000, sleepMin: 480, cardioMinWeek: 150,
 };
 
 export const getGoals = async (db: SQLiteDatabase) => ({ ...DEFAULT_GOALS, ...(await getJSON<Partial<Goals>>(db, 'goals', {})) });

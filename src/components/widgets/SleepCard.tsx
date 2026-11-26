@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Text, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
+import { router } from 'expo-router';
 import { formatSleep } from '../../data/metrics';
 import { localDate } from '../../domain/meals';
 import { logMetric, metricHistory } from '../../repo/health';
@@ -27,7 +28,7 @@ export function SleepCard() {
   const score = data?.score.at(-1);
 
   return (
-    <WidgetCard title="Sleep" action="+ Log" onAction={() => setOpen(true)}>
+    <WidgetCard title="Sleep" action="+ Log" onAction={() => setOpen(true)} onPress={() => router.push({ pathname: '/sleep/[date]', params: { date: 'latest' } })}>
       <View style={{ flexDirection: 'row', gap: 24, alignItems: 'flex-end' }}>
         <View>
           <Text style={{ color: score ? scoreColor(score.value) : colors.text, fontSize: 28, fontWeight: '800' }}>{score ? Math.round(score.value) : '–'}</Text>

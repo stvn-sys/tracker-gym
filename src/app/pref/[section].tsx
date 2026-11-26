@@ -440,7 +440,7 @@ function UnitsSection() {
 
 const GOAL_FIELDS: { key: keyof Goals; label: string }[] = [
   { key: 'calories', label: 'Calories (kcal)' }, { key: 'proteinG', label: 'Protein (g)' }, { key: 'fatG', label: 'Fat (g)' },
-  { key: 'carbsG', label: 'Carbs (g)' }, { key: 'waterMl', label: 'Water (ml)' }, { key: 'steps', label: 'Steps' }, { key: 'sleepMin', label: 'Sleep (minutes)' },
+  { key: 'carbsG', label: 'Carbs (g)' }, { key: 'waterMl', label: 'Water (ml)' }, { key: 'steps', label: 'Steps' }, { key: 'sleepMin', label: 'Sleep (minutes)' }, { key: 'cardioMinWeek', label: 'Cardio (min/week)' },
 ];
 
 function GoalsSection() {

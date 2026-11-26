@@ -6,7 +6,8 @@ import { localDate } from '../../domain/meals';
 import { addPhoto, deletePhoto, listPhotos, POSE_LABEL, POSES, type Pose, type ProgressPhoto } from '../../repo/photos';
 import { colors } from '../../theme/colors';
 import { showAlert } from '../Dialog';
-import { Card, Chip, ChipRow, styles } from '../ui';
+import { Chip, ChipRow, styles } from '../ui';
+import { PhotoCompare } from './PhotoCompare';
 import { prettyDate, useLoad } from '../widgets/common';
 
 const MAX_SIDE = 1080;
@@ -47,8 +48,6 @@ export function PhotosView() {
   };
 
   const ofPose = (photos ?? []).filter((p) => p.pose === pose);
-  const latest = ofPose[0];
-  const first = ofPose[ofPose.length - 1];
   const byDate = new Map<string, ProgressPhoto[]>();
   for (const p of photos ?? []) byDate.set(p.date, [...(byDate.get(p.date) ?? []), p]);
 
@@ -62,19 +61,7 @@ export function PhotosView() {
         {Platform.OS !== 'web' && <Big label="Take photo" onPress={() => pick(true)} />}
       </View>
 
-      {ofPose.length >= 2 && (
-        <Card style={{ gap: 8 }}>
-          <Text style={{ color: colors.textDim, fontWeight: '700', fontSize: 13 }}>{POSE_LABEL[pose].toUpperCase()} · FIRST VS LATEST</Text>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            {[first, latest].map((p) => (
-              <Pressable key={p.id} onPress={() => setViewing(p)} style={{ flex: 1, gap: 4 }}>
-                <Image source={{ uri: p.uri }} style={{ width: '100%', aspectRatio: 3 / 4, borderRadius: 12, backgroundColor: colors.surfaceAlt }} />
-                <Text style={[styles.dim, { textAlign: 'center' }]}>{prettyDate(p.date)}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </Card>
-      )}
+      {ofPose.length >= 2 && <PhotoCompare key={pose} photos={ofPose} title={POSE_LABEL[pose]} />}
 
       {(photos?.length ?? 0) === 0 && (
         <Text style={styles.dim}>No photos yet. Pick a pose and add one. Photos stay on this device.</Text>

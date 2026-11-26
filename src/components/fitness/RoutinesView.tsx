@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
+import { WorkoutChips } from './WorkoutChips';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { createGroup, listGroups, reorderGroups, type RoutineGroup } from '../../repo/routines';
@@ -60,6 +61,7 @@ export function RoutinesView() {
                   <View key={w.id}>
                     <Text style={[styles.text, { fontWeight: '700' }]} numberOfLines={1}>{w.name}</Text>
                     <Text style={{ color: colors.accent, fontSize: 12 }}>{w.weekdays.map((d) => DAYS[d]).join(' + ') || 'No days'}</Text>
+                    <WorkoutChips w={w} />
                   </View>
                 ))}
                 {g.workouts.length === 0 && <Text style={styles.dim}>No workouts yet</Text>}

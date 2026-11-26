@@ -236,4 +236,31 @@ export const MIGRATIONS: string[] = [
   `
   ALTER TABLE exercises ADD COLUMN variant TEXT;
   `,
+  // 9: full sleep sessions (stages as JSON) and cardio sessions
+  `
+  CREATE TABLE sleep_sessions (
+    id TEXT PRIMARY KEY NOT NULL,
+    start_time TEXT NOT NULL,
+    end_time TEXT NOT NULL,
+    wake_date TEXT NOT NULL,
+    stages TEXT NOT NULL DEFAULT '[]',
+    source TEXT,
+    updated_at INTEGER NOT NULL,
+    deleted_at INTEGER
+  );
+  CREATE INDEX idx_sleep_wake ON sleep_sessions(wake_date);
+  CREATE TABLE cardio_sessions (
+    id TEXT PRIMARY KEY NOT NULL,
+    date TEXT NOT NULL,
+    start_time TEXT,
+    minutes REAL NOT NULL,
+    kind TEXT NOT NULL,
+    kcal REAL,
+    distance_m REAL,
+    source TEXT,
+    updated_at INTEGER NOT NULL,
+    deleted_at INTEGER
+  );
+  CREATE INDEX idx_cardio_date ON cardio_sessions(date);
+  `,
 ];

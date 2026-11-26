@@ -27,7 +27,7 @@ export function RecipesView({ date }: { date: string }) {
         <Text style={{ color: colors.accent, fontWeight: '800' }}>+ New recipe or meal</Text>
       </Pressable>
       {recipes?.length === 0 && (
-        <Text style={styles.dim}>Nothing saved yet. Save a meal from its ⋯ menu, or add a recipe's ingredients once and log it whenever you eat it.</Text>
+        <Text style={styles.dim}>Nothing saved yet. Save a meal from its ⋯ menu, or add a recipe’s ingredients once and log it whenever you eat it.</Text>
       )}
       {recipes?.map((r) => (
         <Card key={r.id} style={{ gap: 6 }}>

@@ -7,6 +7,7 @@ import { showAlert } from '../../components/Dialog';
 import { RoutineBody, VolumeList } from '../../components/fitness/RoutineMuscles';
 import { Button, Card, inputStyle, SectionTitle, styles } from '../../components/ui';
 import { DAYS, startOrResume } from '../../components/widgets/WodCard';
+import { WorkoutChips } from '../../components/fitness/WorkoutChips';
 import { deleteGroup, getGroup, renameGroup, reorderRoutines, setActiveGroup, type RoutineGroup } from '../../repo/routines';
 import { repsLabel } from '../../repo/routines';
 import { colors } from '../../theme/colors';
@@ -61,6 +62,7 @@ export default function RoutineGroupScreen() {
             <View style={{ flex: 1 }}>
               <Text style={[styles.text, { fontWeight: '800', fontSize: 17 }]}>{w.name}</Text>
               <Text style={{ color: colors.accent, fontSize: 13 }}>{w.weekdays.map((d) => DAYS[d]).join(' + ') || 'No days assigned'}</Text>
+              <View style={{ marginTop: 4 }}><WorkoutChips w={w} /></View>
             </View>
             <Small label="▲" disabled={i === 0} onPress={() => move(i, -1)} />
             <Small label="▼" disabled={i === g.workouts.length - 1} onPress={() => move(i, 1)} />

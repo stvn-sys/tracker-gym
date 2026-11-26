@@ -40,7 +40,7 @@ export interface SleepSessionLike {
   stages?: { startTime: string; endTime: string; stage: number }[];
 }
 
-const AWAKE_STAGES = new Set([1, 3]); // AWAKE, OUT_OF_BED
+const AWAKE_STAGES = new Set([1, 3, 7]); // AWAKE, OUT_OF_BED, AWAKE_IN_BED
 
 /**
  * Minutes asleep per wake-up day: session length minus awake / out-of-bed stages.

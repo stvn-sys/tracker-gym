@@ -9,9 +9,11 @@
 import { Platform } from 'react-native';
 import type { SQLiteDatabase } from 'expo-sqlite';
 import type { MetricType } from '../data/metrics';
-import { dailyAverage, dailyLatest, lastDays, sleepMinutesByDay } from '../domain/healthAgg';
+import { dailyAverage, dailyLatest, dayOf, lastDays } from '../domain/healthAgg';
 import { logBodyweight } from './bodyweight';
 import { logMetric } from './health';
+import { upsertCardio } from './cardio';
+import { storeSleepMetrics, upsertSleepSessions } from './sleep';
 
 type HC = typeof import('react-native-health-connect');
 // Loaded on first use: the native module only exists in the Android app.
@@ -23,7 +25,8 @@ export type HcStatus = 'unsupported' | 'not-installed' | 'update-required' | 'av
 /** What we read, in the order shown in Settings. */
 export const HC_TYPES = [
   { record: 'Steps', label: 'Steps' },
-  { record: 'SleepSession', label: 'Sleep duration' },
+  { record: 'SleepSession', label: 'Sleep (stages, times)' },
+  { record: 'ExerciseSession', label: 'Cardio sessions' },
   { record: 'RestingHeartRate', label: 'Resting heart rate' },
   { record: 'HeartRateVariabilityRmssd', label: 'Heart rate variability' },
   { record: 'OxygenSaturation', label: 'Blood oxygen (SpO₂)' },
@@ -83,6 +86,12 @@ async function readAll(type: HcRecord, start: string, end: string): Promise<Reco
   return out;
 }
 
+/** Health Connect exercise types counted as cardio (ExerciseType constants). */
+const CARDIO_TYPES: Record<number, string> = {
+  8: 'Cycling', 9: 'Cycling', 10: 'Boot camp', 16: 'Dancing', 25: 'Elliptical', 36: 'HIIT', 37: 'Hiking', 53: 'Rowing', 54: 'Rowing',
+  56: 'Running', 57: 'Running', 61: 'Skiing', 68: 'Stair climber', 69: 'Stair climber', 73: 'Swimming', 74: 'Swimming', 79: 'Walking', 82: 'Wheelchair',
+};
+
 const instant = (r: Record<string, unknown>) => String(r.time ?? r.endTime);
 
 /**
@@ -114,8 +123,32 @@ export async function syncHealthConnect(db: SQLiteDatabase, days = 30): Promise<
     await save('steps', steps);
   }
   if (granted.has('SleepSession')) {
-    const s = await readAll('SleepSession', start, end);
-    await save('sleep_min', sleepMinutesByDay(s as never));
+    // Sleep ending in the window: start reading a day earlier so last night's bedtime is included.
+    const rows = await readAll('SleepSession', new Date(new Date(start).getTime() - 86_400_000).toISOString(), end);
+    const sessions = rows.map((r) => ({
+      id: String((r.metadata as { id?: string } | undefined)?.id ?? `${r.startTime}`),
+      startTime: String(r.startTime), endTime: String(r.endTime),
+      stages: ((r.stages as { startTime: string; endTime: string; stage: number }[] | undefined) ?? []).map((x) => ({ startTime: x.startTime, endTime: x.endTime, stage: x.stage })),
+    }));
+    await upsertSleepSessions(db, sessions, 'health-connect');
+    await storeSleepMetrics(db, range[0].date, range[range.length - 1].date);
+    written.sleep_min = sessions.length;
+  }
+  if (granted.has('ExerciseSession')) {
+    const rows = await readAll('ExerciseSession', start, end);
+    let n = 0;
+    for (const r of rows) {
+      const kind = CARDIO_TYPES[Number(r.exerciseType)];
+      if (!kind) continue; // strength and other non-cardio sessions are logged in the app
+      const minutes = (new Date(String(r.endTime)).getTime() - new Date(String(r.startTime)).getTime()) / 60000;
+      await upsertCardio(db, {
+        id: `hc-${String((r.metadata as { id?: string } | undefined)?.id ?? r.startTime)}`,
+        date: dayOf(String(r.startTime)), startTime: String(r.startTime), minutes: Math.round(minutes),
+        kind: (r.title as string | undefined) || kind, kcal: null, distanceM: null, source: 'health-connect',
+      });
+      n++;
+    }
+    written.cardio = n;
   }
   const avg = async (rec: HcRecord, type: MetricType, value: (r: Record<string, unknown>) => number) => {
     if (!granted.has(rec)) return;

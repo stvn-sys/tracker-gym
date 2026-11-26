@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from 'react-native';
 import { showAlert } from '../Dialog';
 import { router } from 'expo-router';
+import { WorkoutChips } from '../fitness/WorkoutChips';
 import { useSQLiteContext } from 'expo-sqlite';
 import { loadPrefs } from '../../repo/prefs';
 import { activeWorkouts, nextInRotation, routineForWeekday } from '../../repo/routines';
@@ -50,6 +51,7 @@ export function WodCard() {
   return (
     <WidgetCard title={rotation ? 'Next workout' : `Workout of the day · ${DAYS[today]}`}>
       <Text style={[styles.text, { fontSize: 24, fontWeight: '800' }]}>{wod ? wod.name : 'Rest day'}</Text>
+      {wod && <WorkoutChips w={wod} />}
       <Text style={styles.dim} numberOfLines={3}>
         {wod ? wod.exercises.map((e) => e.exerciseName).join(' · ') : 'Nothing scheduled. You can still start an empty workout.'}
       </Text>

@@ -8,6 +8,8 @@ import { Card, SectionTitle, styles } from '../../components/ui';
 import { prettyDate, useLoad } from '../../components/widgets/common';
 import { MetricCard } from '../../components/widgets/MetricCard';
 import { SleepCard } from '../../components/widgets/SleepCard';
+import { RecoveryCard } from '../../components/widgets/RecoveryCard';
+import { CardioCard } from '../../components/widgets/CardioCard';
 import { WeightCard } from '../../components/widgets/WeightCard';
 import { MEASUREMENTS, METRICS, VITALS } from '../../data/metrics';
 import { formatBodyweight as formatWeight, toDisplay } from '../../domain/units';
@@ -26,7 +28,9 @@ export default function Health() {
           page="health"
           cards={[
             { id: 'steps', title: 'Steps', render: () => <MetricCard type="steps" /> },
+            { id: 'recovery', title: 'Recovery', render: () => <RecoveryCard /> },
             { id: 'sleep', title: 'Sleep', render: () => <SleepCard /> },
+            { id: 'cardio', title: 'Cardio', render: () => <CardioCard /> },
             { id: 'vitals-title', title: 'Vitals heading', render: () => <Text style={[styles.section, { marginTop: 4 }]}>Vitals</Text> },
             ...VITALS.map((v) => ({ id: v, title: METRICS[v].label, render: () => <MetricCard type={v} /> })),
           ]}

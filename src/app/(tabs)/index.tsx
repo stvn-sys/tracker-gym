@@ -9,6 +9,8 @@ import { SleepCard } from '../../components/widgets/SleepCard';
 import { WaterCard } from '../../components/widgets/WaterCard';
 import { WeightCard } from '../../components/widgets/WeightCard';
 import { WodCard } from '../../components/widgets/WodCard';
+import { RecoveryCard } from '../../components/widgets/RecoveryCard';
+import { CardioCard } from '../../components/widgets/CardioCard';
 import { localDate } from '../../domain/meals';
 
 export default function Today() {
@@ -27,6 +29,8 @@ export default function Today() {
           { id: 'weight', title: 'Weight', render: () => <WeightCard /> },
           { id: 'sleep', title: 'Sleep', render: () => <SleepCard /> },
           { id: 'water', title: 'Water', render: () => <WaterCard date={today} /> },
+          { id: 'recovery', title: 'Recovery', render: () => <RecoveryCard /> },
+          { id: 'cardio', title: 'Cardio', render: () => <CardioCard date={today} /> },
         ]}
       />
     </ScrollView>

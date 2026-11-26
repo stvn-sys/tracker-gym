@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ComponentRef } from 'react';
+import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { colors } from '../theme/colors';
 
@@ -12,7 +12,7 @@ const W = 48;
 
 /** Selected date title + a scrollable row of days (3 weeks back, 1 week ahead) and a Today button. */
 export function DateStrip({ offset, onChange }: { offset: number; onChange: (offset: number) => void }) {
-  const base = useRef(new Date()).current;
+  const [base] = useState(() => new Date());
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
   const offsets = Array.from({ length: DAYS + 8 }, (_, i) => i - DAYS);
   const selected = new Date(base.getFullYear(), base.getMonth(), base.getDate() + offset);
