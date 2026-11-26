@@ -5,7 +5,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { listRoutines, reorderRoutines, type Routine } from '../../repo/routines';
 import { colors } from '../../theme/colors';
 import { Card, styles } from '../ui';
-import { DAYS, startOrResume } from '../widgets/WodCard';
+import { DAYS, startOrResume, WodCard } from '../widgets/WodCard';
 
 /** All routines with every exercise listed; start, edit, reorder. */
 export function RoutinesView() {
@@ -24,6 +24,7 @@ export function RoutinesView() {
 
   return (
     <View style={{ gap: 12 }}>
+      <WodCard />
       <Pressable onPress={() => router.push('/routine/new')}
         style={{ borderRadius: 14, borderWidth: 1, borderColor: colors.accent, borderStyle: 'dashed', paddingVertical: 14, alignItems: 'center' }}>
         <Text style={{ color: colors.accent, fontWeight: '800' }}>+ New routine</Text>

@@ -10,8 +10,8 @@ test('stepWeight adds/subtracts and never goes below 0', () => {
 });
 
 test('option availability per equipment', () => {
-  assert.ok(supportsLaterality('dumbbell') && supportsLaterality('cable_1') && supportsLaterality('machine_pin'));
+  assert.ok(supportsLaterality('dumbbell') && supportsLaterality('cable') && supportsLaterality('machine_pin'));
   assert.ok(!supportsLaterality('barbell'));
-  assert.ok(supportsAttachment('cable_2') && !supportsAttachment('machine_pin'));
-  assert.ok(supportsBrand('machine_plate') && supportsBrand('smith') && !supportsBrand('dumbbell'));
+  assert.ok(supportsAttachment('cable') && !supportsAttachment('machine_pin'));
+  assert.ok(supportsBrand('machine_plate') && supportsBrand('smith') && !supportsBrand('dumbbell') && !supportsBrand('cable'));
 });

@@ -164,4 +164,32 @@ export const MIGRATIONS: string[] = [
   );
   CREATE UNIQUE INDEX idx_metric_type_date ON health_metrics(type, date);
   `,
+  // 3: one "cable" equipment type with a pulley count, recipes, progress photos
+  `
+  ALTER TABLE exercises ADD COLUMN pulleys INTEGER;
+  UPDATE exercises SET equipment = 'cable', pulleys = 2 WHERE equipment = 'cable_2';
+  UPDATE exercises SET equipment = 'cable', pulleys = 1 WHERE equipment = 'cable_1';
+  UPDATE exercises SET attachment = 'D-handle' WHERE attachment = 'Single D-handle';
+  UPDATE exercises SET attachment = 'Bar' WHERE attachment = 'Straight bar';
+  UPDATE machine_brands SET name = 'gym80' WHERE name = 'Gym80';
+
+  CREATE TABLE recipes (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    servings REAL NOT NULL DEFAULT 1,
+    ingredients TEXT NOT NULL DEFAULT '[]',
+    updated_at INTEGER NOT NULL,
+    deleted_at INTEGER
+  );
+
+  CREATE TABLE progress_photos (
+    id TEXT PRIMARY KEY NOT NULL,
+    date TEXT NOT NULL,
+    pose TEXT NOT NULL,
+    uri TEXT NOT NULL,
+    updated_at INTEGER NOT NULL,
+    deleted_at INTEGER
+  );
+  CREATE INDEX idx_photos_date ON progress_photos(date);
+  `,
 ];

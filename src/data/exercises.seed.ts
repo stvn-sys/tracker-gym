@@ -9,6 +9,8 @@ export interface SeedExercise {
   equipment: Equipment;
   laterality: Laterality | null;
   attachment: string | null;
+  /** Pulleys used (cable exercises only). */
+  pulleys: number | null;
 }
 
 type Row = [string, string, Muscle, Muscle[], Equipment];
@@ -21,8 +23,8 @@ const rows: Row[] = [
   ['db_bench_press', 'Dumbbell Bench Press', 'chest', ['front_delts', 'triceps'], 'dumbbell'],
   ['db_incline_press', 'Incline Dumbbell Press', 'upper_chest', ['front_delts', 'triceps'], 'dumbbell'],
   ['db_fly', 'Dumbbell Fly', 'chest', ['front_delts'], 'dumbbell'],
-  ['cable_crossover', 'Cable Crossover', 'chest', ['front_delts'], 'cable_2'],
-  ['low_cable_fly', 'Low-to-High Cable Fly', 'upper_chest', ['front_delts'], 'cable_2'],
+  ['cable_crossover', 'Cable Crossover', 'chest', ['front_delts'], 'cable'],
+  ['low_cable_fly', 'Low-to-High Cable Fly', 'upper_chest', ['front_delts'], 'cable'],
   ['pec_deck', 'Pec Deck', 'chest', [], 'machine_pin'],
   ['machine_chest_press', 'Machine Chest Press', 'chest', ['triceps', 'front_delts'], 'machine_pin'],
   ['plate_chest_press', 'Plate-Loaded Chest Press', 'chest', ['triceps', 'front_delts'], 'machine_plate'],
@@ -36,10 +38,10 @@ const rows: Row[] = [
   ['db_row', 'One-Arm Dumbbell Row', 'lats', ['upper_back', 'biceps'], 'dumbbell'],
   ['pull_up', 'Pull-Up', 'lats', ['biceps', 'upper_back'], 'bodyweight'],
   ['chin_up', 'Chin-Up', 'lats', ['biceps'], 'bodyweight'],
-  ['lat_pulldown', 'Lat Pulldown', 'lats', ['biceps', 'upper_back'], 'cable_1'],
-  ['close_grip_pulldown', 'Close-Grip Pulldown', 'lats', ['biceps'], 'cable_1'],
-  ['seated_cable_row', 'Seated Cable Row', 'upper_back', ['lats', 'biceps'], 'cable_1'],
-  ['straight_arm_pulldown', 'Straight-Arm Pulldown', 'lats', [], 'cable_1'],
+  ['lat_pulldown', 'Lat Pulldown', 'lats', ['biceps', 'upper_back'], 'cable'],
+  ['close_grip_pulldown', 'Close-Grip Pulldown', 'lats', ['biceps'], 'cable'],
+  ['seated_cable_row', 'Seated Cable Row', 'upper_back', ['lats', 'biceps'], 'cable'],
+  ['straight_arm_pulldown', 'Straight-Arm Pulldown', 'lats', [], 'cable'],
   ['tbar_row', 'T-Bar Row', 'upper_back', ['lats', 'biceps'], 'machine_plate'],
   ['chest_supported_row', 'Chest-Supported Row', 'upper_back', ['lats', 'rear_delts'], 'machine_plate'],
   ['machine_row', 'Machine Row', 'upper_back', ['lats', 'biceps'], 'machine_pin'],
@@ -57,13 +59,13 @@ const rows: Row[] = [
   ['arnold_press', 'Arnold Press', 'front_delts', ['side_delts', 'triceps'], 'dumbbell'],
   ['landmine_press', 'Landmine Press', 'upper_chest', ['front_delts', 'triceps'], 'landmine'],
   ['lateral_raise', 'Lateral Raise', 'side_delts', [], 'dumbbell'],
-  ['cable_lateral_raise', 'Cable Lateral Raise', 'side_delts', [], 'cable_1'],
+  ['cable_lateral_raise', 'Cable Lateral Raise', 'side_delts', [], 'cable'],
   ['machine_lateral_raise', 'Machine Lateral Raise', 'side_delts', [], 'machine_pin'],
   ['front_raise', 'Front Raise', 'front_delts', [], 'dumbbell'],
   ['plate_front_raise', 'Plate Front Raise', 'front_delts', ['upper_chest'], 'plate'],
   ['rear_delt_fly', 'Rear Delt Fly', 'rear_delts', ['upper_back'], 'dumbbell'],
   ['reverse_pec_deck', 'Reverse Pec Deck', 'rear_delts', ['upper_back'], 'machine_pin'],
-  ['face_pull', 'Face Pull', 'rear_delts', ['upper_back', 'traps'], 'cable_1'],
+  ['face_pull', 'Face Pull', 'rear_delts', ['upper_back', 'traps'], 'cable'],
   ['upright_row', 'Upright Row', 'side_delts', ['traps'], 'barbell'],
   // Arms
   ['barbell_curl', 'Barbell Curl', 'biceps', ['forearms'], 'barbell'],
@@ -73,24 +75,24 @@ const rows: Row[] = [
   ['hammer_curl', 'Hammer Curl', 'biceps', ['forearms'], 'dumbbell'],
   ['incline_db_curl', 'Incline Dumbbell Curl', 'biceps', [], 'dumbbell'],
   ['preacher_curl', 'Preacher Curl', 'biceps', [], 'machine_pin'],
-  ['cable_curl', 'Cable Curl', 'biceps', ['forearms'], 'cable_1'],
-  ['bayesian_curl', 'Bayesian Cable Curl', 'biceps', [], 'cable_2'],
+  ['cable_curl', 'Cable Curl', 'biceps', ['forearms'], 'cable'],
+  ['bayesian_curl', 'Bayesian Cable Curl', 'biceps', [], 'cable'],
   ['band_curl', 'Band Curl', 'biceps', [], 'band'],
   ['close_grip_bench', 'Close-Grip Bench Press', 'triceps', ['chest', 'front_delts'], 'barbell'],
   ['skull_crusher', 'Skull Crusher', 'triceps', [], 'ez_bar'],
-  ['triceps_pushdown', 'Triceps Pushdown', 'triceps', [], 'cable_1'],
-  ['overhead_cable_ext', 'Overhead Cable Extension', 'triceps', [], 'cable_1'],
+  ['triceps_pushdown', 'Triceps Pushdown', 'triceps', [], 'cable'],
+  ['overhead_cable_ext', 'Overhead Cable Extension', 'triceps', [], 'cable'],
   ['db_overhead_ext', 'Dumbbell Overhead Extension', 'triceps', [], 'dumbbell'],
-  ['cable_cross_ext', 'Cross-Body Cable Extension', 'triceps', [], 'cable_2'],
+  ['cable_cross_ext', 'Cross-Body Cable Extension', 'triceps', [], 'cable'],
   ['wrist_curl', 'Wrist Curl', 'forearms', [], 'dumbbell'],
   ['farmer_carry', "Farmer's Carry", 'forearms', ['traps', 'abs'], 'dumbbell'],
   // Core
   ['plank', 'Plank', 'abs', ['obliques'], 'bodyweight'],
   ['hanging_leg_raise', 'Hanging Leg Raise', 'abs', ['obliques', 'forearms'], 'bodyweight'],
-  ['cable_crunch', 'Cable Crunch', 'abs', ['obliques'], 'cable_1'],
+  ['cable_crunch', 'Cable Crunch', 'abs', ['obliques'], 'cable'],
   ['ab_wheel', 'Ab Wheel Rollout', 'abs', ['lats'], 'bodyweight'],
   ['russian_twist', 'Russian Twist', 'obliques', ['abs'], 'bodyweight'],
-  ['pallof_press', 'Pallof Press', 'obliques', ['abs'], 'cable_1'],
+  ['pallof_press', 'Pallof Press', 'obliques', ['abs'], 'cable'],
   ['machine_crunch', 'Machine Crunch', 'abs', [], 'machine_pin'],
   // Legs
   ['back_squat', 'Back Squat', 'quads', ['glutes', 'adductors', 'hamstrings'], 'barbell'],
@@ -109,9 +111,9 @@ const rows: Row[] = [
   ['nordic_curl', 'Nordic Curl', 'hamstrings', [], 'bodyweight'],
   ['hip_thrust', 'Hip Thrust', 'glutes', ['hamstrings'], 'barbell'],
   ['kb_swing', 'Kettlebell Swing', 'glutes', ['hamstrings', 'upper_back'], 'kettlebell'],
-  ['cable_kickback', 'Cable Glute Kickback', 'glutes', [], 'cable_1'],
+  ['cable_kickback', 'Cable Glute Kickback', 'glutes', [], 'cable'],
   ['hip_abduction', 'Hip Abduction', 'glutes', [], 'machine_pin'],
-  ['cable_hip_adduction', 'Cable Hip Adduction', 'adductors', [], 'cable_1'],
+  ['cable_hip_adduction', 'Cable Hip Adduction', 'adductors', [], 'cable'],
   ['copenhagen_plank', 'Copenhagen Plank', 'adductors', ['obliques'], 'bodyweight'],
   ['hip_adduction', 'Hip Adduction', 'adductors', [], 'machine_pin'],
   ['standing_calf_raise', 'Standing Calf Raise', 'calves', [], 'machine_pin'],
@@ -125,20 +127,24 @@ const UNILATERAL = new Set([
   'cable_hip_adduction', 'bayesian_curl', 'cable_cross_ext', 'landmine_row', 'pallof_press',
 ]);
 
+/** Cable exercises that use two pulleys at once. */
+const TWO_PULLEY = new Set(['cable_crossover', 'low_cable_fly', 'cable_cross_ext']);
+
 /** Default attachment for cable exercises. */
 const ATTACHMENT: Record<string, string> = {
-  cable_crossover: 'Single D-handle', low_cable_fly: 'Single D-handle',
+  cable_crossover: 'D-handle', low_cable_fly: 'D-handle',
   lat_pulldown: 'Lat bar', close_grip_pulldown: 'V-handle', seated_cable_row: 'V-handle',
-  straight_arm_pulldown: 'Straight bar', cable_lateral_raise: 'Cuff', face_pull: 'Rope',
-  cable_curl: 'EZ bar', bayesian_curl: 'Single D-handle', triceps_pushdown: 'Rope',
+  straight_arm_pulldown: 'Bar', cable_lateral_raise: 'Cuff', face_pull: 'Rope',
+  cable_curl: 'EZ bar', bayesian_curl: 'D-handle', triceps_pushdown: 'Rope',
   overhead_cable_ext: 'Rope', cable_cross_ext: 'No attachment', cable_crunch: 'Rope',
-  pallof_press: 'Single D-handle', cable_kickback: 'Ankle strap', cable_hip_adduction: 'Ankle strap',
+  pallof_press: 'D-handle', cable_kickback: 'Ankle strap', cable_hip_adduction: 'Ankle strap',
 };
 
 export const SEED_EXERCISES: SeedExercise[] = rows.map(([key, name, primary, secondary, equipment]) => ({
   key, name, primary, secondary, equipment,
   laterality: supportsLaterality(equipment) ? (UNILATERAL.has(key) ? 'unilateral' : 'bilateral') : null,
   attachment: ATTACHMENT[key] ?? null,
+  pulleys: equipment === 'cable' ? (TWO_PULLEY.has(key) ? 2 : 1) : null,
 }));
 
 /** Example routines (editable). Weekdays: 0 = Sun … 6 = Sat. */

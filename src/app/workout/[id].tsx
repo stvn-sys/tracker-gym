@@ -147,6 +147,7 @@ export default function ActiveWorkout() {
   const series = brand?.series.find((s) => s.id === we?.exercise.seriesId);
   const meta = we ? [
     EQUIPMENT_LABEL[we.exercise.equipment],
+    we.exercise.pulleys ? `${we.exercise.pulleys} ${we.exercise.pulleys === 1 ? 'pulley' : 'pulleys'}` : null,
     we.exercise.attachment,
     brand && [brand.name, series?.name].filter(Boolean).join(' '),
     we.exercise.laterality === 'unilateral' ? 'Unilateral' : null,

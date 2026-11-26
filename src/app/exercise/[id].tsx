@@ -6,7 +6,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useProfile } from '../../components/ProfileContext';
 import { Button, Card, Chip, ChipRow, inputStyle, SectionTitle, styles } from '../../components/ui';
 import {
-  CABLE_ATTACHMENTS, DEFAULT_ADDON_PLATES_KG, DEFAULT_INCREMENT_KG, EQUIPMENT, EQUIPMENT_LABEL,
+  CABLE_ATTACHMENTS, DEFAULT_ADDON_PLATES_KG, PULLEY_OPTIONS, DEFAULT_INCREMENT_KG, EQUIPMENT, EQUIPMENT_LABEL,
   supportsAddonPlates, supportsAttachment, supportsBrand, supportsLaterality, type Equipment,
 } from '../../data/equipment';
 import { MUSCLES, MUSCLE_LABEL, type Muscle } from '../../data/muscles';
@@ -22,7 +22,7 @@ const ADDON_OPTIONS_KG = [0.5, 1, 1.25, 2.5];
 const blank: ExerciseInput = {
   name: '', primaryMuscle: 'chest', secondaryMuscles: [], equipment: 'dumbbell',
   incrementKg: DEFAULT_INCREMENT_KG.dumbbell, addonPlatesKg: [], laterality: 'bilateral',
-  attachment: null, brandId: null, seriesId: null,
+  attachment: null, pulleys: null, brandId: null, seriesId: null,
 };
 
 export default function ExerciseEditor() {
@@ -61,6 +61,7 @@ export default function ExerciseEditor() {
       addonPlatesKg: DEFAULT_ADDON_PLATES_KG[eq] ?? [],
       laterality: supportsLaterality(eq) ? (f.laterality ?? 'bilateral') : null,
       attachment: supportsAttachment(eq) ? f.attachment : null,
+      pulleys: supportsAttachment(eq) ? (f.pulleys ?? 1) : null,
       brandId: supportsBrand(eq) ? f.brandId : null,
       seriesId: supportsBrand(eq) ? f.seriesId : null,
     }));
@@ -139,37 +140,51 @@ export default function ExerciseEditor() {
 
       {supportsAttachment(eq) && (
         <>
-          <SectionTitle>Attachment</SectionTitle>
-          <ChipRow wrap>
-            {CABLE_ATTACHMENTS.map((a) => (
-              <Chip key={a} label={a} active={form.attachment === a} onPress={() => set('attachment', form.attachment === a ? null : a)} />
-            ))}
-          </ChipRow>
+          <SectionTitle>Cable</SectionTitle>
+          <Card style={{ gap: 10 }}>
+            <Text style={styles.dim}>Pulleys</Text>
+            <ChipRow wrap>
+              {PULLEY_OPTIONS.map((n) => (
+                <Chip key={n} label={String(n)} active={form.pulleys === n} onPress={() => set('pulleys', n)} />
+              ))}
+            </ChipRow>
+            <Text style={styles.dim}>Attachment</Text>
+            <ChipRow wrap>
+              {CABLE_ATTACHMENTS.map((a) => (
+                <Chip key={a} label={a} active={form.attachment === a} onPress={() => set('attachment', form.attachment === a ? null : a)} />
+              ))}
+            </ChipRow>
+          </Card>
         </>
       )}
 
       {supportsBrand(eq) && (
         <>
-          <SectionTitle>Brand</SectionTitle>
-          <ChipRow wrap>
-            {brands.map((b) => (
-              <Chip key={b.id} label={b.name} active={form.brandId === b.id}
-                onPress={() => setForm((f) => ({ ...f, brandId: f.brandId === b.id ? null : b.id, seriesId: null }))} />
-            ))}
-          </ChipRow>
-          <AddRow value={newBrand} onChange={setNewBrand} onAdd={addBrand} placeholder="Add a brand" />
-          {brand && (
-            <>
-              <Text style={styles.dim}>{brand.name} series</Text>
-              <ChipRow wrap>
-                {brand.series.map((s) => (
-                  <Chip key={s.id} label={s.name} active={form.seriesId === s.id}
-                    onPress={() => set('seriesId', form.seriesId === s.id ? null : s.id)} />
-                ))}
-              </ChipRow>
-              <AddRow value={newSeries} onChange={setNewSeries} onAdd={addSeries} placeholder={`Add a ${brand.name} series`} />
-            </>
-          )}
+          <SectionTitle>Machine</SectionTitle>
+          <Card style={{ gap: 10 }}>
+            <Text style={styles.dim}>Machine brand</Text>
+            <ChipRow wrap>
+              {brands.map((b) => (
+                <Chip key={b.id} label={b.name} active={form.brandId === b.id}
+                  onPress={() => setForm((f) => ({ ...f, brandId: f.brandId === b.id ? null : b.id, seriesId: null }))} />
+              ))}
+            </ChipRow>
+            <AddRow value={newBrand} onChange={setNewBrand} onAdd={addBrand} placeholder="Add a brand" />
+            <Text style={styles.dim}>Series of machine</Text>
+            {brand ? (
+              <>
+                <ChipRow wrap>
+                  {brand.series.map((s) => (
+                    <Chip key={s.id} label={s.name} active={form.seriesId === s.id}
+                      onPress={() => set('seriesId', form.seriesId === s.id ? null : s.id)} />
+                  ))}
+                </ChipRow>
+                <AddRow value={newSeries} onChange={setNewSeries} onAdd={addSeries} placeholder={`Add a ${brand.name} series`} />
+              </>
+            ) : (
+              <Text style={[styles.dim, { fontStyle: 'italic' }]}>Pick a brand first</Text>
+            )}
+          </Card>
         </>
       )}
 

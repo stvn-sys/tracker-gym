@@ -9,11 +9,23 @@ export const METRICS = {
   rhr: { label: 'Resting heart rate', unit: 'bpm', decimals: 0, min: 25, max: 150 },
   hrv: { label: 'Heart rate variability', unit: 'ms', decimals: 0, min: 1, max: 300 },
   skin_temp: { label: 'Skin temp. variation', unit: '°C', decimals: 1, min: -5, max: 5 },
+  // Body measurements
+  body_fat: { label: 'Body fat', unit: '%', decimals: 1, min: 2, max: 70 },
+  neck: { label: 'Neck', unit: 'cm', decimals: 1, min: 15, max: 80 },
+  shoulders: { label: 'Shoulders', unit: 'cm', decimals: 1, min: 50, max: 200 },
+  chest: { label: 'Chest', unit: 'cm', decimals: 1, min: 50, max: 200 },
+  waist: { label: 'Waist', unit: 'cm', decimals: 1, min: 40, max: 200 },
+  hips: { label: 'Hips', unit: 'cm', decimals: 1, min: 50, max: 200 },
+  arm: { label: 'Upper arm', unit: 'cm', decimals: 1, min: 15, max: 70 },
+  forearm: { label: 'Forearm', unit: 'cm', decimals: 1, min: 15, max: 60 },
+  thigh: { label: 'Thigh', unit: 'cm', decimals: 1, min: 25, max: 100 },
+  calf: { label: 'Calf', unit: 'cm', decimals: 1, min: 20, max: 70 },
 } as const;
 
 export type MetricType = keyof typeof METRICS;
 
 export const VITALS: MetricType[] = ['vo2max', 'breathing_rate', 'spo2', 'rhr', 'hrv', 'skin_temp'];
+export const MEASUREMENTS: MetricType[] = ['body_fat', 'neck', 'shoulders', 'chest', 'waist', 'hips', 'arm', 'forearm', 'thigh', 'calf'];
 
 export function formatMetric(type: MetricType, value: number | null | undefined): string {
   if (value == null) return '–';

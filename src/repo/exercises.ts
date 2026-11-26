@@ -18,6 +18,8 @@ export interface Exercise {
   addonPlatesKg: number[];
   laterality: Laterality | null;
   attachment: string | null;
+  /** Pulleys used, cable exercises only (1–4). */
+  pulleys: number | null;
   brandId: string | null;
   seriesId: string | null;
   builtinKey: string | null;
@@ -27,7 +29,7 @@ export type ExerciseInput = Omit<Exercise, 'id' | 'builtinKey'>;
 
 interface Row {
   id: string; name: string; primary_muscle: string; secondary_muscles: string; equipment: string;
-  increment_kg: number; addon_plates: string; laterality: string | null; attachment: string | null;
+  increment_kg: number; addon_plates: string; laterality: string | null; attachment: string | null; pulleys: number | null;
   brand_id: string | null; series_id: string | null; builtin_key: string | null;
 }
 
@@ -41,6 +43,7 @@ export const mapExercise = (r: Row): Exercise => ({
   addonPlatesKg: JSON.parse(r.addon_plates),
   laterality: r.laterality as Laterality | null,
   attachment: r.attachment,
+  pulleys: r.pulleys ?? null,
   brandId: r.brand_id,
   seriesId: r.series_id,
   builtinKey: r.builtin_key,
@@ -56,15 +59,16 @@ export function seedToInput(e: SeedExercise): ExerciseInput {
     addonPlatesKg: DEFAULT_ADDON_PLATES_KG[e.equipment] ?? [],
     laterality: e.laterality,
     attachment: e.attachment,
+    pulleys: e.pulleys,
     brandId: null,
     seriesId: null,
   };
 }
 
-const COLS = 'name, primary_muscle, secondary_muscles, equipment, increment_kg, addon_plates, laterality, attachment, brand_id, series_id';
+const COLS = 'name, primary_muscle, secondary_muscles, equipment, increment_kg, addon_plates, laterality, attachment, pulleys, brand_id, series_id';
 const values = (e: ExerciseInput) => [
   e.name.trim(), e.primaryMuscle, JSON.stringify(e.secondaryMuscles), e.equipment, e.incrementKg,
-  JSON.stringify(e.addonPlatesKg), e.laterality, e.attachment, e.brandId, e.seriesId,
+  JSON.stringify(e.addonPlatesKg), e.laterality, e.attachment, e.pulleys, e.brandId, e.seriesId,
 ];
 
 export async function listExercises(db: SQLiteDatabase): Promise<Exercise[]> {
@@ -82,7 +86,7 @@ export async function getExercise(db: SQLiteDatabase, id: string): Promise<Exerc
 export async function createExercise(db: SQLiteDatabase, e: ExerciseInput, builtinKey: string | null = null) {
   const id = newId();
   await db.runAsync(
-    `INSERT INTO exercises (id, ${COLS}, builtin_key, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO exercises (id, ${COLS}, builtin_key, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     id, ...values(e), builtinKey, now(),
   );
   return id;
@@ -94,7 +98,7 @@ export const insertSeedExercise = (db: SQLiteDatabase, e: SeedExercise) =>
 export async function updateExercise(db: SQLiteDatabase, id: string, e: ExerciseInput) {
   await db.runAsync(
     `UPDATE exercises SET name = ?, primary_muscle = ?, secondary_muscles = ?, equipment = ?, increment_kg = ?,
-     addon_plates = ?, laterality = ?, attachment = ?, brand_id = ?, series_id = ?, updated_at = ? WHERE id = ?`,
+     addon_plates = ?, laterality = ?, attachment = ?, pulleys = ?, brand_id = ?, series_id = ?, updated_at = ? WHERE id = ?`,
     ...values(e), now(), id,
   );
 }

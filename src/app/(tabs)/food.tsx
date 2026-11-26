@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
-import { CardList } from '../../components/CardList';
+import { RecipesView } from '../../components/food/RecipesView';
 import { useSubTab } from '../../components/SubTabs';
 import { styles } from '../../components/ui';
 import { CaloriesCard } from '../../components/widgets/CaloriesCard';
@@ -9,31 +9,24 @@ import { WaterCard } from '../../components/widgets/WaterCard';
 import { localDate } from '../../domain/meals';
 import { colors } from '../../theme/colors';
 
-export default function Food() {
+export default function Nutrition() {
   const sub = useSubTab('food');
-  const [offset, setOffset] = useState(0);
   const [base] = useState(() => new Date());
+  const [offset, setOffset] = useState(0);
   const date = localDate(base, offset);
-  const label = offset === 0 ? 'Today' : offset === -1 ? 'Yesterday' : offset === 1 ? 'Tomorrow'
-    : prettyDay(date);
+  const label = offset === 0 ? 'Today' : offset === -1 ? 'Yesterday' : offset === 1 ? 'Tomorrow' : prettyDay(date);
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingBottom: 40 }]}>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingBottom: 40 }]} keyboardShouldPersistTaps="handled">
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Arrow label="‹" onPress={() => setOffset((o) => o - 1)} />
         <Pressable onPress={() => setOffset(0)}><Text style={[styles.text, { fontWeight: '800', fontSize: 18 }]}>{label}</Text></Pressable>
         <Arrow label="›" onPress={() => setOffset((o) => o + 1)} />
       </View>
-      {sub === 'Nutrition' && <><CaloriesCard date={date} title="Summary" /><NutritionCard date={date} /></>}
-      {sub === 'Water' && <WaterCard date={date} />}
-      {sub === 'Overview' && <CardList
-        page="food"
-        cards={[
-          { id: 'summary', title: 'Summary', render: () => <CaloriesCard date={date} title="Summary" /> },
-          { id: 'nutrition', title: 'Nutrition', render: () => <NutritionCard date={date} /> },
-          { id: 'water', title: 'Water tracker', render: () => <WaterCard date={date} /> },
-        ]}
-      />}
+      {sub === 'Summary' && <CaloriesCard date={date} title="Summary" />}
+      {sub === 'Intake' && <NutritionCard date={date} />}
+      {sub === 'Water Tracker' && <WaterCard date={date} />}
+      {sub === 'Recipes' && <RecipesView date={date} />}
     </ScrollView>
   );
 }

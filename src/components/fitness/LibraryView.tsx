@@ -96,6 +96,7 @@ export function LibraryView() {
             <Text style={styles.dim}>
               {MUSCLE_LABEL[item.primaryMuscle]} · {EQUIPMENT_LABEL[item.equipment]}
               {item.laterality === 'unilateral' ? ' · Unilateral' : ''}
+              {item.pulleys ? ` · ${item.pulleys}× pulley` : ''}
               {item.attachment ? ` · ${item.attachment}` : ''}
             </Text>
           </Pressable>

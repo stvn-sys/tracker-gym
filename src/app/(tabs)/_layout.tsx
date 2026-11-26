@@ -35,7 +35,7 @@ export default function TabsLayout() {
         }}
       >
         <Tabs.Screen name="fitness" options={{ title: 'Fitness', tabBarIcon: icon('🏋') }} />
-        <Tabs.Screen name="food" options={{ title: 'Food', tabBarIcon: icon('🍽') }} />
+        <Tabs.Screen name="food" options={{ title: 'Nutrition', tabBarIcon: icon('🍽') }} />
         <Tabs.Screen name="index" options={{ title: 'Today', tabBarIcon: icon('☀') }} />
         <Tabs.Screen name="health" options={{ title: 'Health', tabBarIcon: icon('♥') }} />
         <Tabs.Screen name="settings" options={{ title: 'Settings', tabBarIcon: icon('⚙') }} />
