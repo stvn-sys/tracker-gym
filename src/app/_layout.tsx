@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
+import { DataVersionProvider } from '../components/DataVersion';
 import { ProfileProvider } from '../components/ProfileContext';
 import { DB_NAME, initDatabase } from '../db/client';
 import { colors } from '../theme/colors';
@@ -9,6 +10,7 @@ export default function RootLayout() {
   return (
     <SQLiteProvider databaseName={DB_NAME} onInit={initDatabase}>
       <ProfileProvider>
+        <DataVersionProvider>
         <StatusBar style="light" />
         <Stack
           screenOptions={{
@@ -19,6 +21,7 @@ export default function RootLayout() {
         >
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         </Stack>
+        </DataVersionProvider>
       </ProfileProvider>
     </SQLiteProvider>
   );

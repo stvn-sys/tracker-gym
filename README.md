@@ -9,6 +9,15 @@ npx expo start        # scan the QR code with Expo Go, or press w for web
 npm run typecheck && npm test
 ```
 
+## Pages
+- **Today** – workout of the day, calories (+ quick add), steps, weight, sleep, water
+- **Fitness** – Routines · Log (search by exercise or date) · Library · Ranks
+- **Food** – summary, nutrition (Quick Add / Breakfast / Lunch / Dinner / Snacks), water tracker
+- **Health** – steps, weight, sleep, vitals (VO₂ max, breathing rate, SpO₂, RHR, HRV, skin temp)
+
+Every card page has **Edit layout** at the bottom to reorder or hide cards.
+Goals (calories, macros, water, steps, sleep) are in Settings (⚙).
+
 ## Layout
 - `src/app/` – screens (expo-router)
 - `src/db/` – migrations (`schema.ts`), init, seed

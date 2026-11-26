@@ -37,3 +37,16 @@ export async function seedIfEmpty(db: SQLiteDatabase) {
     await db.runAsync("INSERT INTO settings (key, value, updated_at) VALUES ('seeded', '1', ?)", t);
   });
 }
+
+/** Default water bottles (added once, editable). */
+export async function seedV2(db: SQLiteDatabase) {
+  const done = await db.getFirstAsync<{ value: string }>("SELECT value FROM settings WHERE key = 'seededV2'");
+  if (done) return;
+  await db.withTransactionAsync(async () => {
+    const t = now();
+    for (const [i, [name, ml]] of ([['Glass', 250], ['Bottle', 500], ['Large bottle', 750], ['1 L bottle', 1000]] as const).entries()) {
+      await db.runAsync('INSERT INTO water_bottles (id, name, ml, position, updated_at) VALUES (?, ?, ?, ?, ?)', newId(), name, ml, i, t);
+    }
+    await db.runAsync("INSERT INTO settings (key, value, updated_at) VALUES ('seededV2', '1', ?)", t);
+  });
+}

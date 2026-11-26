@@ -14,7 +14,7 @@ import { latestBodyweightKg } from '../../repo/bodyweight';
 import { computeStats, RECENT_DAYS, type StatsResult } from '../../repo/stats';
 import { colors } from '../../theme/colors';
 
-export default function Stats() {
+export function RanksView() {
   const db = useSQLiteContext();
   const { profile } = useProfile();
   const [bw, setBw] = useState<number | null | undefined>(undefined);

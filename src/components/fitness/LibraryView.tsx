@@ -10,7 +10,7 @@ import { colors } from '../../theme/colors';
 
 type Sort = 'name' | 'muscle' | 'equipment';
 
-export default function Library() {
+export function LibraryView() {
   const db = useSQLiteContext();
   const [items, setItems] = useState<Exercise[]>([]);
   const [query, setQuery] = useState('');

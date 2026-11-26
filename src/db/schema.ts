@@ -117,4 +117,51 @@ export const MIGRATIONS: string[] = [
     updated_at INTEGER NOT NULL
   );
   `,
+  // 2: food, water, health metrics
+  `
+  CREATE TABLE food_entries (
+    id TEXT PRIMARY KEY NOT NULL,
+    date TEXT NOT NULL,
+    meal TEXT NOT NULL,
+    name TEXT NOT NULL,
+    calories REAL NOT NULL DEFAULT 0,
+    protein_g REAL NOT NULL DEFAULT 0,
+    fat_g REAL NOT NULL DEFAULT 0,
+    carbs_g REAL NOT NULL DEFAULT 0,
+    logged_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    deleted_at INTEGER
+  );
+  CREATE INDEX idx_food_date ON food_entries(date);
+
+  CREATE TABLE water_logs (
+    id TEXT PRIMARY KEY NOT NULL,
+    date TEXT NOT NULL,
+    ml REAL NOT NULL,
+    logged_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    deleted_at INTEGER
+  );
+  CREATE INDEX idx_water_date ON water_logs(date);
+
+  CREATE TABLE water_bottles (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    ml REAL NOT NULL,
+    position INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    deleted_at INTEGER
+  );
+
+  -- One value per metric per day (steps, sleep, vitals). See src/data/metrics.ts.
+  CREATE TABLE health_metrics (
+    id TEXT PRIMARY KEY NOT NULL,
+    type TEXT NOT NULL,
+    date TEXT NOT NULL,
+    value REAL NOT NULL,
+    updated_at INTEGER NOT NULL,
+    deleted_at INTEGER
+  );
+  CREATE UNIQUE INDEX idx_metric_type_date ON health_metrics(type, date);
+  `,
 ];
