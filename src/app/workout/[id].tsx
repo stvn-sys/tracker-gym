@@ -10,7 +10,7 @@ import { ExercisePicker } from '../../components/ExercisePicker';
 import { NumPad, RIR_COLORS } from '../../components/NumPad';
 import { useProfile } from '../../components/ProfileContext';
 import { Button, inputStyle, styles } from '../../components/ui';
-import { EQUIPMENT_LABEL } from '../../data/equipment';
+import { equipmentDetail } from '../../data/equipment';
 import { formatWeight, fromDisplay, toDisplay } from '../../domain/units';
 import { formatDuration, volumeKg } from '../../domain/workout';
 import { listBrands, type Brand } from '../../repo/brands';
@@ -191,13 +191,8 @@ export default function ActiveWorkout() {
       ]
     : [];
 
-  const brand = we && brands.find((b) => b.id === we.exercise.brandId);
-  const series = brand?.series.find((s) => s.id === we?.exercise.seriesId);
   const meta = we ? [
-    EQUIPMENT_LABEL[we.exercise.equipment],
-    we.exercise.pulleys ? `${we.exercise.pulleys} ${we.exercise.pulleys === 1 ? 'pulley' : 'pulleys'}` : null,
-    we.exercise.attachment,
-    brand && [brand.name, series?.name].filter(Boolean).join(' '),
+    equipmentDetail(we.exercise, brands),
     we.exercise.laterality === 'unilateral' ? 'Unilateral' : null,
   ].filter(Boolean).join(' · ') : '';
 

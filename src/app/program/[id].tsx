@@ -8,6 +8,7 @@ import { RoutineBody, VolumeList } from '../../components/fitness/RoutineMuscles
 import { Button, Card, inputStyle, SectionTitle, styles } from '../../components/ui';
 import { DAYS, startOrResume } from '../../components/widgets/WodCard';
 import { deleteGroup, getGroup, renameGroup, reorderRoutines, setActiveGroup, type RoutineGroup } from '../../repo/routines';
+import { repsLabel } from '../../repo/routines';
 import { colors } from '../../theme/colors';
 
 export default function RoutineGroupScreen() {
@@ -68,7 +69,7 @@ export default function RoutineGroupScreen() {
           {w.exercises.map((e, n) => (
             <View key={e.id} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <Text style={styles.text}><Text style={styles.dim}>{n + 1}. </Text>{e.exerciseName}</Text>
-              <Text style={styles.dim}>{e.targetSets} × {e.targetReps}</Text>
+              <Text style={styles.dim}>{e.targetSets} × {repsLabel(e.targetReps, e.targetRepsMax)}</Text>
             </View>
           ))}
           <Pressable onPress={() => startOrResume(db, w.id)}

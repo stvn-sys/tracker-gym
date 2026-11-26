@@ -6,7 +6,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useProfile } from '../../components/ProfileContext';
 import { Button, Card, Chip, ChipRow, inputStyle, SectionTitle, styles } from '../../components/ui';
 import {
-  CABLE_ATTACHMENTS, DEFAULT_ADDON_PLATES_KG, PULLEY_OPTIONS, DEFAULT_INCREMENT_KG, EQUIPMENT, EQUIPMENT_LABEL,
+  BAR_TYPES, CABLE_ATTACHMENTS, DEFAULT_ADDON_PLATES_KG, PULLEY_OPTIONS, supportsBarType, DEFAULT_INCREMENT_KG, EQUIPMENT, EQUIPMENT_LABEL,
   supportsAddonPlates, supportsAttachment, supportsBrand, supportsLaterality, type Equipment,
 } from '../../data/equipment';
 import { MUSCLES, MUSCLE_LABEL, type Muscle } from '../../data/muscles';
@@ -22,7 +22,7 @@ const ADDON_OPTIONS_KG = [0.5, 1, 1.25, 2.5];
 const blank: ExerciseInput = {
   name: '', primaryMuscle: 'chest', secondaryMuscles: [], equipment: 'dumbbell',
   incrementKg: DEFAULT_INCREMENT_KG.dumbbell, addonPlatesKg: [], laterality: 'bilateral',
-  attachment: null, pulleys: null, restSeconds: null, brandId: null, seriesId: null,
+  attachment: null, pulleys: null, restSeconds: null, barType: null, brandId: null, seriesId: null,
 };
 
 const REST_OPTIONS = [30, 60, 90, 120, 150, 180];
@@ -65,6 +65,7 @@ export default function ExerciseEditor() {
       laterality: supportsLaterality(eq) ? (f.laterality ?? 'bilateral') : null,
       attachment: supportsAttachment(eq) ? f.attachment : null,
       pulleys: supportsAttachment(eq) ? (f.pulleys ?? 1) : null,
+      barType: supportsBarType(eq) ? (f.barType ?? 'Olympic barbell') : null,
       brandId: supportsBrand(eq) ? f.brandId : null,
       seriesId: supportsBrand(eq) ? f.seriesId : null,
     }));
@@ -137,6 +138,15 @@ export default function ExerciseEditor() {
           <ChipRow wrap>
             <Chip label="Bilateral" active={form.laterality === 'bilateral'} onPress={() => set('laterality', 'bilateral')} />
             <Chip label="Unilateral" active={form.laterality === 'unilateral'} onPress={() => set('laterality', 'unilateral')} />
+          </ChipRow>
+        </>
+      )}
+
+      {supportsBarType(eq) && (
+        <>
+          <SectionTitle>Bar</SectionTitle>
+          <ChipRow wrap>
+            {BAR_TYPES.map((b) => <Chip key={b} label={b} active={form.barType === b} onPress={() => set('barType', b)} />)}
           </ChipRow>
         </>
       )}

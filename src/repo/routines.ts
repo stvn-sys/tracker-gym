@@ -11,6 +11,8 @@ export interface RoutineExercise {
   position: number;
   targetSets: number;
   targetReps: number;
+  /** Top of the rep range (null = a single rep target). */
+  targetRepsMax: number | null;
   /** Exercises sharing this id are done as a superset. */
   supersetId: string | null;
 }
@@ -31,9 +33,9 @@ export async function listRoutines(db: SQLiteDatabase): Promise<Routine[]> {
   );
   const items = await db.getAllAsync<{
     id: string; routine_id: string; exercise_id: string; name: string; primary_muscle: string; secondary_muscles: string;
-    position: number; target_sets: number; target_reps: number; superset_id: string | null;
+    position: number; target_sets: number; target_reps: number; target_reps_max: number | null; superset_id: string | null;
   }>(
-    `SELECT re.id, re.routine_id, re.exercise_id, e.name, e.primary_muscle, e.secondary_muscles, re.position, re.target_sets, re.target_reps, re.superset_id
+    `SELECT re.id, re.routine_id, re.exercise_id, e.name, e.primary_muscle, e.secondary_muscles, re.position, re.target_sets, re.target_reps, re.target_reps_max, re.superset_id
      FROM routine_exercises re JOIN exercises e ON e.id = re.exercise_id
      WHERE re.deleted_at IS NULL AND e.deleted_at IS NULL ORDER BY re.position`,
   );
@@ -48,7 +50,7 @@ export async function listRoutines(db: SQLiteDatabase): Promise<Routine[]> {
       .map((i) => ({
         id: i.id, exerciseId: i.exercise_id, exerciseName: i.name,
         primaryMuscle: i.primary_muscle as Muscle, secondaryMuscles: JSON.parse(i.secondary_muscles),
-        position: i.position, targetSets: i.target_sets, targetReps: i.target_reps, supersetId: i.superset_id,
+        position: i.position, targetSets: i.target_sets, targetReps: i.target_reps, targetRepsMax: i.target_reps_max, supersetId: i.superset_id,
       })),
   }));
 }
@@ -61,7 +63,7 @@ export interface RoutineInput {
   groupId?: string | null;
   name: string;
   weekdays: number[];
-  exercises: { exerciseId: string; targetSets: number; targetReps: number; supersetId?: string | null }[];
+  exercises: { exerciseId: string; targetSets: number; targetReps: number; targetRepsMax?: number | null; supersetId?: string | null }[];
 }
 
 export async function getRoutine(db: SQLiteDatabase, id: string): Promise<Routine | null> {
@@ -76,8 +78,9 @@ export async function writeItems(db: SQLiteDatabase, routineId: string, items: R
   );
   for (const [i, it] of items.entries()) {
     await db.runAsync(
-      'INSERT INTO routine_exercises (id, routine_id, exercise_id, position, target_sets, target_reps, superset_id, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      newId(), routineId, it.exerciseId, i, it.targetSets, it.targetReps, it.supersetId ?? null, t,
+      'INSERT INTO routine_exercises (id, routine_id, exercise_id, position, target_sets, target_reps, target_reps_max, superset_id, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      newId(), routineId, it.exerciseId, i, it.targetSets, it.targetReps,
+      it.targetRepsMax && it.targetRepsMax > it.targetReps ? it.targetRepsMax : null, it.supersetId ?? null, t,
     );
   }
 }
@@ -203,3 +206,6 @@ export async function nextInRotation(db: SQLiteDatabase): Promise<Routine | null
   const i = list.findIndex((w) => w.id === last?.routine_id);
   return list[(i + 1) % list.length];
 }
+
+/** "8–12" for a range, "8" for a single target. */
+export const repsLabel = (min: number, max: number | null | undefined) => (max && max > min ? `${min}–${max}` : `${min}`);

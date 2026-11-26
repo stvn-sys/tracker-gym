@@ -341,17 +341,22 @@ export async function unlinkSuperset(db: SQLiteDatabase, we: WorkoutExercise) {
 export async function updateRoutineFromWorkout(db: SQLiteDatabase, workoutId: string) {
   const w = await getWorkout(db, workoutId);
   if (!w?.routineId) return false;
-  const planned = await db.getAllAsync<{ exercise_id: string; target_sets: number; target_reps: number }>(
-    'SELECT exercise_id, target_sets, target_reps FROM routine_exercises WHERE routine_id = ? AND deleted_at IS NULL',
+  const planned = await db.getAllAsync<{ exercise_id: string; target_sets: number; target_reps: number; target_reps_max: number | null }>(
+    'SELECT exercise_id, target_sets, target_reps, target_reps_max FROM routine_exercises WHERE routine_id = ? AND deleted_at IS NULL',
     w.routineId,
   );
   const plan = new Map(planned.map((p) => [p.exercise_id, p]));
   const items = w.exercises.map((e) => {
     const done = e.sets.filter((s) => !s.isWarmup && s.completedAt);
     const before = plan.get(e.exercise.id);
+    // A planned rep range is kept as is; a single rep target follows what you did.
+    const keepRange = !!before?.target_reps_max;
     return done.length
-      ? { exerciseId: e.exercise.id, targetSets: done.length, targetReps: done[done.length - 1].reps ?? before?.target_reps ?? 8, supersetId: e.supersetId }
-      : { exerciseId: e.exercise.id, targetSets: before?.target_sets ?? Math.max(1, e.sets.filter((s) => !s.isWarmup).length), targetReps: before?.target_reps ?? 8, supersetId: e.supersetId };
+      ? { exerciseId: e.exercise.id, targetSets: done.length, supersetId: e.supersetId,
+          targetReps: keepRange ? before!.target_reps : done[done.length - 1].reps ?? before?.target_reps ?? 8,
+          targetRepsMax: keepRange ? before!.target_reps_max : null }
+      : { exerciseId: e.exercise.id, targetSets: before?.target_sets ?? Math.max(1, e.sets.filter((s) => !s.isWarmup).length),
+          targetReps: before?.target_reps ?? 8, targetRepsMax: before?.target_reps_max ?? null, supersetId: e.supersetId };
   });
   await db.withTransactionAsync(async () => { await writeItems(db, w.routineId!, items); });
   return true;

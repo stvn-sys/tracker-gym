@@ -11,6 +11,8 @@ export interface SeedExercise {
   attachment: string | null;
   /** Pulleys used (cable exercises only). */
   pulleys: number | null;
+  /** Kind of bar (bar exercises only). */
+  barType: string | null;
 }
 
 type Row = [string, string, Muscle, Muscle[], Equipment];
@@ -69,8 +71,8 @@ const rows: Row[] = [
   ['upright_row', 'Upright Row', 'side_delts', ['traps'], 'barbell'],
   // Arms
   ['barbell_curl', 'Barbell Curl', 'biceps', ['forearms'], 'barbell'],
-  ['ez_preacher_curl', 'EZ-Bar Preacher Curl', 'biceps', [], 'ez_bar'],
-  ['ez_bar_curl', 'EZ-Bar Curl', 'biceps', ['forearms'], 'ez_bar'],
+  ['ez_preacher_curl', 'EZ-Bar Preacher Curl', 'biceps', [], 'barbell'],
+  ['ez_bar_curl', 'EZ-Bar Curl', 'biceps', ['forearms'], 'barbell'],
   ['db_curl', 'Dumbbell Curl', 'biceps', ['forearms'], 'dumbbell'],
   ['hammer_curl', 'Hammer Curl', 'biceps', ['forearms'], 'dumbbell'],
   ['incline_db_curl', 'Incline Dumbbell Curl', 'biceps', [], 'dumbbell'],
@@ -79,7 +81,7 @@ const rows: Row[] = [
   ['bayesian_curl', 'Bayesian Cable Curl', 'biceps', [], 'cable'],
   ['band_curl', 'Band Curl', 'biceps', [], 'band'],
   ['close_grip_bench', 'Close-Grip Bench Press', 'triceps', ['chest', 'front_delts'], 'barbell'],
-  ['skull_crusher', 'Skull Crusher', 'triceps', [], 'ez_bar'],
+  ['skull_crusher', 'Skull Crusher', 'triceps', [], 'barbell'],
   ['triceps_pushdown', 'Triceps Pushdown', 'triceps', [], 'cable'],
   ['overhead_cable_ext', 'Overhead Cable Extension', 'triceps', [], 'cable'],
   ['db_overhead_ext', 'Dumbbell Overhead Extension', 'triceps', [], 'dumbbell'],
@@ -127,6 +129,11 @@ const UNILATERAL = new Set([
   'cable_hip_adduction', 'bayesian_curl', 'cable_cross_ext', 'landmine_row', 'pallof_press',
 ]);
 
+/** Bar exercises that use something other than an Olympic barbell. */
+const BAR_TYPE: Record<string, string> = {
+  ez_bar_curl: 'EZ bar', ez_preacher_curl: 'EZ bar', skull_crusher: 'EZ bar', trap_bar_deadlift: 'Trap bar',
+};
+
 /** Cable exercises that use two pulleys at once. */
 const TWO_PULLEY = new Set(['cable_crossover', 'low_cable_fly', 'cable_cross_ext']);
 
@@ -145,6 +152,7 @@ export const SEED_EXERCISES: SeedExercise[] = rows.map(([key, name, primary, sec
   laterality: supportsLaterality(equipment) ? (UNILATERAL.has(key) ? 'unilateral' : 'bilateral') : null,
   attachment: ATTACHMENT[key] ?? null,
   pulleys: equipment === 'cable' ? (TWO_PULLEY.has(key) ? 2 : 1) : null,
+  barType: equipment === 'barbell' ? (BAR_TYPE[key] ?? 'Olympic barbell') : null,
 }));
 
 /** Example routines (editable). Weekdays: 0 = Sun … 6 = Sat. */

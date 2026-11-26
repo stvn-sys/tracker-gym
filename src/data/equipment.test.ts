@@ -15,3 +15,11 @@ test('option availability per equipment', () => {
   assert.ok(supportsAttachment('cable') && !supportsAttachment('machine'));
   assert.ok(supportsBrand('machine') && supportsBrand('smith') && !supportsBrand('dumbbell') && !supportsBrand('cable'));
 });
+
+test('equipmentDetail describes the sub-type', async () => {
+  const { equipmentDetail } = await import('./equipment.ts');
+  assert.equal(equipmentDetail({ equipment: 'barbell', barType: 'Trap bar' }), 'Bar · Trap bar');
+  assert.equal(equipmentDetail({ equipment: 'cable', pulleys: 2, attachment: 'Rope' }), 'Cable · 2 pulleys · Rope');
+  const brands = [{ id: 'm', name: 'Matrix', series: [{ id: 'v', name: 'Versa' }] }];
+  assert.equal(equipmentDetail({ equipment: 'machine', brandId: 'm', seriesId: 'v' }, brands), 'Machine · Matrix Versa');
+});

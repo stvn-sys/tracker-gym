@@ -4,7 +4,8 @@ import { showAlert } from '../Dialog';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Chip, ChipRow, inputStyle, styles } from '../../components/ui';
-import { EQUIPMENT, EQUIPMENT_LABEL, type Equipment } from '../../data/equipment';
+import { EQUIPMENT, EQUIPMENT_LABEL, equipmentDetail, type Equipment } from '../../data/equipment';
+import { listBrands, type Brand } from '../../repo/brands';
 import { MUSCLES, MUSCLE_LABEL, type Muscle } from '../../data/muscles';
 import { listExercises, restoreDefaultExercises, type Exercise } from '../../repo/exercises';
 import { colors } from '../../theme/colors';
@@ -19,7 +20,8 @@ export function LibraryView() {
   const [equipment, setEquipment] = useState<Equipment | null>(null);
   const [sort, setSort] = useState<Sort>('name');
 
-  const reload = useCallback(() => { listExercises(db).then(setItems); }, [db]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const reload = useCallback(() => { listExercises(db).then(setItems); listBrands(db).then(setBrands); }, [db]);
   useFocusEffect(reload);
 
   const visible = useMemo(() => {
@@ -94,10 +96,8 @@ export function LibraryView() {
               {!item.builtinKey && <Text style={{ color: colors.accent, fontSize: 12 }}>  CUSTOM</Text>}
             </Text>
             <Text style={styles.dim}>
-              {MUSCLE_LABEL[item.primaryMuscle]} · {EQUIPMENT_LABEL[item.equipment]}
+              {MUSCLE_LABEL[item.primaryMuscle]} · {equipmentDetail(item, brands)}
               {item.laterality === 'unilateral' ? ' · Unilateral' : ''}
-              {item.pulleys ? ` · ${item.pulleys}× pulley` : ''}
-              {item.attachment ? ` · ${item.attachment}` : ''}
             </Text>
           </Pressable>
         )}

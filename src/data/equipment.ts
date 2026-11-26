@@ -3,20 +3,20 @@
  * Everything is in kg; the lbs setting only changes what is displayed.
  */
 export const EQUIPMENT = [
-  'barbell', 'ez_bar', 'dumbbell', 'cable', 'machine', 'smith',
+  'barbell', 'dumbbell', 'cable', 'machine', 'smith',
   'plate', 'bodyweight', 'band', 'other',
 ] as const;
 export type Equipment = (typeof EQUIPMENT)[number];
 
 export const EQUIPMENT_LABEL: Record<Equipment, string> = {
-  barbell: 'Barbell', ez_bar: 'EZ bar', dumbbell: 'Dumbbell', cable: 'Cable',
+  barbell: 'Bar', dumbbell: 'Dumbbell', cable: 'Cable',
   machine: 'Machine', smith: 'Smith machine', plate: 'Weight plate',
   bodyweight: 'Bodyweight', band: 'Band', other: 'Other',
 };
 
 /** Default "+" step in kg for a new exercise of this equipment type. */
 export const DEFAULT_INCREMENT_KG: Record<Equipment, number> = {
-  barbell: 2.5, ez_bar: 2.5, dumbbell: 2, cable: 2.5, machine: 5, smith: 2.5,
+  barbell: 2.5, dumbbell: 2, cable: 2.5, machine: 5, smith: 2.5,
   plate: 2.5, bodyweight: 2.5, band: 0, other: 2.5,
 };
 
@@ -40,6 +40,13 @@ export const supportsAttachment = isCable;
 export const supportsAddonPlates = (e: Equipment) => isCable(e) || isMachine(e);
 
 export type Laterality = 'bilateral' | 'unilateral';
+
+/** Kinds of bar for the "Bar" equipment type. */
+export const BAR_TYPES = [
+  'Olympic barbell', "Women's Olympic bar", 'Standard bar', 'EZ bar', 'Trap bar', 'Safety squat bar',
+  'Multi-grip bar', 'Cambered bar', 'Axle bar', 'Fixed barbell', 'Technique bar',
+] as const;
+export const supportsBarType = (e: Equipment) => e === 'barbell';
 
 export const CABLE_ATTACHMENTS = [
   'D-handle', 'Bar', 'EZ bar', 'Rope', 'V-handle', 'Lat bar', 'Wide row bar',
@@ -66,4 +73,26 @@ export const SEED_BRANDS: { name: string; series: string[] }[] = [
 export function stepWeight(weightKg: number, incrementKg: number, direction: 1 | -1 = 1): number {
   const next = weightKg + direction * incrementKg;
   return Math.max(0, Math.round(next * 100) / 100);
+}
+
+/**
+ * One-line description of an exercise's equipment, with its sub-type:
+ * "Bar · Trap bar", "Cable · 2 pulleys · Rope", "Machine · Matrix Versa".
+ */
+export function equipmentDetail(
+  e: { equipment: Equipment; barType?: string | null; pulleys?: number | null; attachment?: string | null; brandId?: string | null; seriesId?: string | null },
+  brands: { id: string; name: string; series: { id: string; name: string }[] }[] = [],
+): string {
+  const parts: string[] = [EQUIPMENT_LABEL[e.equipment]];
+  if (e.equipment === 'barbell' && e.barType) parts.push(e.barType);
+  if (e.equipment === 'cable') {
+    if (e.pulleys) parts.push(`${e.pulleys} ${e.pulleys === 1 ? 'pulley' : 'pulleys'}`);
+    if (e.attachment) parts.push(e.attachment);
+  }
+  if (e.brandId) {
+    const b = brands.find((x) => x.id === e.brandId);
+    const s = b?.series.find((x) => x.id === e.seriesId);
+    if (b) parts.push([b.name, s?.name].filter(Boolean).join(' '));
+  }
+  return parts.join(' · ');
 }

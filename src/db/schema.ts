@@ -219,4 +219,12 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE workout_exercises ADD COLUMN superset_id TEXT;
   ALTER TABLE routine_exercises ADD COLUMN superset_id TEXT;
   `,
+  // 6: "Bar" with bar types (EZ bar becomes a bar type), rep ranges in routine workouts
+  `
+  ALTER TABLE exercises ADD COLUMN bar_type TEXT;
+  UPDATE exercises SET equipment = 'barbell', bar_type = 'EZ bar' WHERE equipment = 'ez_bar';
+  UPDATE exercises SET bar_type = 'Trap bar' WHERE builtin_key = 'trap_bar_deadlift';
+  UPDATE exercises SET bar_type = 'Olympic barbell' WHERE equipment = 'barbell' AND bar_type IS NULL;
+  ALTER TABLE routine_exercises ADD COLUMN target_reps_max INTEGER;
+  `,
 ];
