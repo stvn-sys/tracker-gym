@@ -25,6 +25,8 @@ export interface Prefs {
   attachments: string[];
   // Gym locations (editable in Settings); asked for when starting a workout
   gyms: string[];
+  // Android Health Connect sync
+  healthConnect: { enabled: boolean; lastSync: number | null };
   // Look
   theme: ThemeName;
   accent: Accent;
@@ -43,6 +45,7 @@ export const DEFAULT_PREFS: Prefs = {
   equipment: [...EQUIPMENT],
   attachments: [...CABLE_ATTACHMENTS],
   gyms: [],
+  healthConnect: { enabled: false, lastSync: null },
   theme: 'dark', accent: 'blue',
   remindWorkout: { on: false, hour: 17, minute: 30 },
   remindWeigh: { on: false, hour: 7, minute: 30 },

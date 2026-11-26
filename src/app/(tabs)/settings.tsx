@@ -38,6 +38,7 @@ export default function Settings() {
       { section: 'reminders', label: 'Reminders', icon: 'bell', tile: TILE.red, value: reminders.length ? reminders.join(' · ') : 'Off', keywords: 'notification notify water weigh' },
     ],
     [
+      { section: 'health', label: 'Health Connect', icon: 'heart', tile: TILE.gray, value: prefs.healthConnect.enabled ? 'On' : 'Off', keywords: 'samsung health google fit steps sleep heart sync watch' },
       { section: 'schedule', label: 'Plan & schedule', icon: 'calendar', tile: TILE.orange, value: `${prefs.schedule === 'rotation' ? 'Rotation' : 'Weekdays'} · ${prefs.weekStart === 1 ? 'Mon' : 'Sun'}`, keywords: 'routine rotation week start day' },
       { section: 'units', label: 'Units & language', icon: 'ruler', tile: TILE.cyan, value: `${profile.unit} · ${prefs.lengthUnit} · English`, keywords: 'kg lbs pounds cm inches language' },
       { section: 'goals', label: 'Nutrition & goals', icon: 'target', tile: TILE.teal, value: goals ? `${goals.calories} kcal` : '', keywords: 'calories protein fat carbs water steps sleep macros' },

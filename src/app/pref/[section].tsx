@@ -13,6 +13,9 @@ import { ChoiceRow, Group, Step, TimeRow, ToggleRow } from '../../components/Set
 import { Button, inputStyle, styles } from '../../components/ui';
 import { playBeep, buzz } from '../../components/alerts';
 import { APP_VERSION } from '../../data/appInfo';
+import {
+  connectHealthConnect, grantedHealthTypes, HC_TYPES, healthConnectStatus, openHealthConnectSettings, syncHealthConnect, type HcStatus,
+} from '../../repo/healthConnect';
 import { CABLE_ATTACHMENTS } from '../../data/equipment';
 import { exportAll, importAll, resetAll } from '../../repo/backup';
 import { DEFAULT_GOALS, getGoals, setGoals, type Goals } from '../../repo/kv';
@@ -21,7 +24,7 @@ import { formatBodyweight, fromDisplay } from '../../domain/units';
 import { ACCENTS, colors, type Accent } from '../../theme/colors';
 
 const TITLES: Record<string, string> = {
-  profile: 'Profile', workout: 'Workout', gyms: 'Gyms', attachments: 'Attachments', alerts: 'Timer alerts', reminders: 'Reminders', schedule: 'Plan & schedule',
+  profile: 'Profile', workout: 'Workout', gyms: 'Gyms', attachments: 'Attachments', health: 'Health Connect', alerts: 'Timer alerts', reminders: 'Reminders', schedule: 'Plan & schedule',
   units: 'Units & language', goals: 'Nutrition & goals', look: 'Look & Home', data: 'Data & backup', about: 'About',
 };
 
@@ -33,6 +36,7 @@ export default function PrefSection() {
       {section === 'profile' && <ProfileSection />}
       {section === 'workout' && <WorkoutSection />}
       {section === 'gyms' && <GymsSection />}
+      {section === 'health' && <HealthConnectSection />}
       {section === 'attachments' && <AttachmentsSection />}
       {section === 'alerts' && <AlertsSection />}
       {section === 'reminders' && <RemindersSection />}
@@ -151,6 +155,92 @@ function ListEditor({ items, onChange, placeholder }: { items: string[]; onChang
         </Pressable>
       </View>
     </Group>
+  );
+}
+
+function HealthConnectSection() {
+  const db = useSQLiteContext();
+  const { bump } = useDataVersion();
+  const { prefs, setPrefs } = usePrefs();
+  const [status, setStatus] = useState<HcStatus | null>(null);
+  const [granted, setGranted] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState('');
+  const hcPrefs = prefs.healthConnect;
+
+  useEffect(() => {
+    healthConnectStatus().then(async (s) => {
+      setStatus(s);
+      if (s === 'available') setGranted(await grantedHealthTypes().catch(() => []));
+    });
+  }, []);
+
+  const sync = async () => {
+    setBusy(true);
+    setResult('');
+    try {
+      const n = await syncHealthConnect(db, 30);
+      setPrefs({ healthConnect: { enabled: true, lastSync: Date.now() } });
+      bump();
+      const total = Object.values(n).reduce((a, b) => a + b, 0);
+      setResult(total ? `Synced ${total} day-values from the last 30 days.` : 'Connected, but Health Connect has no data for the last 30 days yet.');
+    } catch {
+      setResult('Sync failed. Open Health Connect and check that Tracker Gym has access.');
+    } finally { setBusy(false); }
+  };
+
+  const connect = async () => {
+    try {
+      const g = await connectHealthConnect();
+      setGranted(g);
+      if (!g.length) { showAlert('No access given', 'Allow Tracker Gym in Health Connect to read your data, then try again.'); return; }
+      await sync();
+    } catch {
+      showAlert('Could not open Health Connect', 'Make sure the Health Connect app is installed and up to date.');
+    }
+  };
+
+  if (status === null) return null;
+  if (status === 'unsupported') {
+    return <Text style={[styles.dim, { marginHorizontal: 16, lineHeight: 20 }]}>Health Connect is an Android feature and works in the installed app on your phone, not in the browser preview.</Text>;
+  }
+  if (status !== 'available') {
+    return (
+      <Group footer="Health Connect is built into Android 14 and newer. On older Android versions, install it from the Play Store.">
+        <FieldRow label="Health Connect"><Text style={{ color: colors.textDim }}>{status === 'update-required' ? 'Needs an update' : 'Not installed'}</Text></FieldRow>
+      </Group>
+    );
+  }
+  const last = hcPrefs.lastSync ? new Date(hcPrefs.lastSync).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Never';
+  return (
+    <>
+      <Group footer="Samsung Health, Google Fit and most watches share their data through Health Connect. Synced values replace manual entries for the same day.">
+        {hcPrefs.enabled && granted.length > 0 ? (
+          <>
+            <ToggleRow label="Sync automatically" sub="When the app opens, at most every 15 minutes (last 7 days)." value={hcPrefs.enabled}
+              onChange={(v) => setPrefs({ healthConnect: { ...hcPrefs, enabled: v } })} />
+            <FieldRow label="Last sync"><Text style={{ color: colors.textDim }}>{last}</Text></FieldRow>
+            <Pressable onPress={sync} disabled={busy} style={{ paddingHorizontal: 16, paddingVertical: 14 }}>
+              <Text style={{ color: colors.accent, fontSize: 17 }}>{busy ? 'Syncing…' : 'Sync last 30 days now'}</Text>
+            </Pressable>
+          </>
+        ) : (
+          <View style={{ padding: 12 }}><Button label="Connect Health Connect" onPress={connect} /></View>
+        )}
+      </Group>
+      {result ? <Text style={[styles.dim, { marginHorizontal: 16 }]}>{result}</Text> : null}
+      <Group title="Data">
+        {HC_TYPES.map((t) => (
+          <FieldRow key={t.record} label={t.label}>
+            <Text style={{ color: granted.includes(t.record) ? colors.success : colors.textDim }}>{granted.includes(t.record) ? 'Allowed' : 'Not allowed'}</Text>
+          </FieldRow>
+        ))}
+      </Group>
+      <Text style={[styles.dim, { marginHorizontal: 16, lineHeight: 20 }]}>
+        Sleep score is not shared through Health Connect, so it stays manual. To change what Tracker Gym can read, open Health Connect.
+      </Text>
+      <Button label="Open Health Connect" variant="ghost" onPress={openHealthConnectSettings} />
+    </>
   );
 }
 
