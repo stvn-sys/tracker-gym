@@ -8,7 +8,7 @@ import { DataVersionProvider } from '../components/DataVersion';
 import { PrefsProvider, usePrefs } from '../components/Prefs';
 import { ProfileProvider } from '../components/ProfileContext';
 import { ReminderSync } from '../components/Reminders';
-import { HealthSync } from '../components/HealthSync';
+import { AutoMacrosSync, HealthSync } from '../components/HealthSync';
 import { DB_NAME, initDatabase } from '../db/client';
 import { colors } from '../theme/colors';
 
@@ -36,6 +36,7 @@ function ThemedApp() {
       <DialogHost />
       <ReminderSync />
       <HealthSync />
+      <AutoMacrosSync />
     </DataVersionProvider>
   );
 }

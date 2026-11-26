@@ -24,10 +24,10 @@ export function RecipesView({ date }: { date: string }) {
     <View style={{ gap: 12 }}>
       <Pressable onPress={() => router.push('/recipe/new')}
         style={{ borderRadius: 14, borderWidth: 1, borderColor: colors.accent, borderStyle: 'dashed', paddingVertical: 14, alignItems: 'center' }}>
-        <Text style={{ color: colors.accent, fontWeight: '800' }}>+ New recipe</Text>
+        <Text style={{ color: colors.accent, fontWeight: '800' }}>+ New recipe or meal</Text>
       </Pressable>
       {recipes?.length === 0 && (
-        <Text style={styles.dim}>No recipes yet. Add the ingredients once, then log servings of it whenever you eat it.</Text>
+        <Text style={styles.dim}>Nothing saved yet. Save a meal from its ⋯ menu, or add a recipe's ingredients once and log it whenever you eat it.</Text>
       )}
       {recipes?.map((r) => (
         <Card key={r.id} style={{ gap: 6 }}>
@@ -42,10 +42,21 @@ export function RecipesView({ date }: { date: string }) {
             </Pressable>
           </View>
           <Text style={{ color: colors.accent }}>Per serving: {macroLine(perServing(r))}</Text>
-          <Pressable onPress={() => setLogging(r)}
-            style={{ marginTop: 4, borderRadius: 12, paddingVertical: 10, alignItems: 'center', backgroundColor: colors.accentDim }}>
-            <Text style={{ color: colors.accent, fontWeight: '800' }}>Log a serving</Text>
-          </Pressable>
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+            <Pressable onPress={async () => {
+              const m = mealForTime();
+              const k = 1 / (r.servings > 0 ? r.servings : 1);
+              for (const i of r.ingredients) await addFood(db, date, m, { name: i.name, calories: i.calories * k, proteinG: i.proteinG * k, fatG: i.fatG * k, carbsG: i.carbsG * k });
+              showAlert('Logged', `${r.name} added to ${MEAL_LABEL[m]}.`);
+              bump();
+            }} style={{ flex: 1, borderRadius: 12, paddingVertical: 10, alignItems: 'center', backgroundColor: colors.accent }}>
+              <Text style={{ color: '#06121F', fontWeight: '800' }}>+ {MEAL_LABEL[mealForTime()]}</Text>
+            </Pressable>
+            <Pressable onPress={() => setLogging(r)}
+              style={{ flex: 1, borderRadius: 12, paddingVertical: 10, alignItems: 'center', backgroundColor: colors.accentDim }}>
+              <Text style={{ color: colors.accent, fontWeight: '800' }}>Choose amount…</Text>
+            </Pressable>
+          </View>
         </Card>
       ))}
       {logging && <LogRecipe recipe={logging} date={date} onClose={() => setLogging(null)} onDone={() => { setLogging(null); bump(); }} />}

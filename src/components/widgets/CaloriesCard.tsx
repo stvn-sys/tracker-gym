@@ -32,23 +32,27 @@ export function CaloriesCard({ date, quickAdd = false, title = 'Calories' }: { d
           {Math.abs(Math.round(left))} {left >= 0 ? 'left' : 'over'}
         </Text>
       </View>
-      <Bar value={t.calories / g.calories} />
-      <View style={{ flexDirection: 'row', gap: 12 }}>
-        <Macro label="Protein" value={t.proteinG} goal={g.proteinG} color={MACRO_COLORS.protein} />
-        <Macro label="Fat" value={t.fatG} goal={g.fatG} color={MACRO_COLORS.fat} />
-        <Macro label="Carbs" value={t.carbsG} goal={g.carbsG} color={MACRO_COLORS.carbs} />
+      <View style={{ gap: 8 }}>
+        <MacroRow label="Energy" value={t.calories} goal={g.calories} unit="kcal" color={colors.accent} />
+        <MacroRow label="Protein" value={t.proteinG} goal={g.proteinG} unit="g" color={MACRO_COLORS.protein} />
+        <MacroRow label="Carbs" value={t.carbsG} goal={g.carbsG} unit="g" color={MACRO_COLORS.carbs} />
+        <MacroRow label="Fat" value={t.fatG} goal={g.fatG} unit="g" color={MACRO_COLORS.fat} />
       </View>
       <FoodEntry date={date} meal={meal} onClose={() => setMeal(null)} onSaved={() => { setMeal(null); bump(); }} />
     </WidgetCard>
   );
 }
 
-function Macro({ label, value, goal, color }: { label: string; value: number; goal: number; color: string }) {
+function MacroRow({ label, value, goal, unit, color }: { label: string; value: number; goal: number; unit: string; color: string }) {
   return (
-    <View style={{ flex: 1, gap: 4 }}>
-      <Text style={styles.dim}>{label}</Text>
-      <Text style={{ color: colors.text, fontWeight: '700' }}>{Math.round(value)}<Text style={{ color: colors.textDim, fontWeight: '400' }}> / {goal} g</Text></Text>
-      <Bar value={value / goal} color={color} height={6} />
+    <View style={{ gap: 4 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+        <Text style={{ color: colors.text, fontWeight: '700', flexShrink: 1 }} numberOfLines={1}>
+          {label}<Text style={{ color: colors.textDim, fontWeight: '400' }}>  {Math.round(value)} / {Math.round(goal)} {unit}</Text>
+        </Text>
+        <Text style={[styles.dim, { marginLeft: 'auto', fontSize: 13 }]}>{goal > 0 ? Math.round((value / goal) * 100) : 0}%</Text>
+      </View>
+      <Bar value={goal > 0 ? value / goal : 0} color={color} height={6} />
     </View>
   );
 }

@@ -31,6 +31,8 @@ export interface Prefs {
   gyms: string[];
   // Android Health Connect sync
   healthConnect: { enabled: boolean; lastSync: number | null };
+  // Calorie/macro targets that follow the weight trend (weekly)
+  autoMacros: { on: boolean; rateKgWeek: number; lastRun: number | null; tdee: number | null; slopeKgWeek: number | null };
   // Look
   theme: ThemeName;
   accent: Accent;
@@ -51,6 +53,7 @@ export const DEFAULT_PREFS: Prefs = {
   barTypes: [...BAR_TYPES],
   gyms: [],
   healthConnect: { enabled: false, lastSync: null },
+  autoMacros: { on: false, rateKgWeek: 0, lastRun: null, tdee: null, slopeKgWeek: null },
   theme: 'dark', accent: 'blue',
   remindWorkout: { on: false, hour: 17, minute: 30 },
   remindWeigh: { on: false, hour: 7, minute: 30 },

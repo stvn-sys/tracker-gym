@@ -44,3 +44,16 @@ export async function recentFoods(db: SQLiteDatabase, limit = 12): Promise<FoodI
   );
   return rows.map(map).map(({ name, calories, proteinG, fatG, carbsG }) => ({ name, calories, proteinG, fatG, carbsG }));
 }
+
+/** Copies a day's food (or one meal of it) to another day, with fresh ids. */
+export async function copyFood(db: SQLiteDatabase, from: string, to: string, meal?: Meal, toMeal?: Meal) {
+  const items = (await foodForDate(db, from)).filter((f) => !meal || f.meal === meal);
+  for (const f of items) await addFood(db, to, toMeal ?? f.meal, f);
+  return items.length;
+}
+
+/** Deletes all food of one meal on a day. */
+export async function clearMeal(db: SQLiteDatabase, date: string, meal: Meal) {
+  const t = now();
+  await db.runAsync('UPDATE food_entries SET deleted_at = ?, updated_at = ? WHERE date = ? AND meal = ? AND deleted_at IS NULL', t, t, date, meal);
+}

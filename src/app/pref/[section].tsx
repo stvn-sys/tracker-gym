@@ -18,6 +18,7 @@ import {
 } from '../../repo/healthConnect';
 import { BAR_TYPES, CABLE_ATTACHMENTS, EQUIPMENT, EQUIPMENT_LABEL, VARIANTS, supportsBrand, supportsPulleys, PULLEY_OPTIONS, type Equipment } from '../../data/equipment';
 import { createBrand, createSeries, deleteBrand, deleteSeries, listBrands, renameBrand, renameSeries, type Brand } from '../../repo/brands';
+import { runAutoMacros } from '../../repo/autoMacros';
 import { exportAll, importAll, resetAll } from '../../repo/backup';
 import { DEFAULT_GOALS, getGoals, setGoals, type Goals } from '../../repo/kv';
 import { latestBodyweightKg, logBodyweight } from '../../repo/bodyweight';
@@ -454,7 +455,32 @@ function GoalsSection() {
     setGoals(db, next).then(bump);
   };
   const macroKcal = goals.proteinG * 4 + goals.fatG * 9 + goals.carbsG * 4;
+  const { prefs, setPrefs } = usePrefs();
+  const a = prefs.autoMacros;
+  const [busy, setBusy] = useState(false);
+  const runNow = async () => {
+    setBusy(true);
+    const r = await runAutoMacros(db, a.rateKgWeek);
+    setBusy(false);
+    if (!r) { showAlert('Not enough data yet', 'Needs at least 5 weigh-ins over 10+ days and 7 days of logged food in the last 3 weeks.'); return; }
+    setPrefs({ autoMacros: { ...a, lastRun: Date.now(), tdee: r.tdee, slopeKgWeek: r.slopeKgPerWeek } });
+    setLocal(await getGoals(db));
+    bump();
+    showAlert('Targets updated', `Estimated maintenance ${r.tdee} kcal · trend ${r.slopeKgPerWeek > 0 ? '+' : ''}${r.slopeKgPerWeek} kg/week → ${r.targets.calories} kcal.`);
+  };
+  const RATES = [-0.75, -0.5, -0.25, 0, 0.25, 0.5];
   return (
+    <>
+    <Group title="Adaptive targets" footer={a.on
+      ? `Every week the app compares what you ate with your weight trend (not single weigh-ins) and moves calories toward your goal, at most 250 kcal at a time. Protein stays as you set it.${a.tdee ? ` Last estimate: maintenance ${a.tdee} kcal, trend ${a.slopeKgWeek} kg/week.` : ''}`
+      : 'Turn on to let calories and macros follow your weight trend each week.'}>
+      <ToggleRow label="Adjust targets weekly" value={a.on} onChange={(on) => setPrefs({ autoMacros: { ...a, on, lastRun: on ? a.lastRun : null } })} />
+      {a.on && (
+        <ChoiceRow label="Goal (kg per week)" value={a.rateKgWeek} onChange={(rateKgWeek) => setPrefs({ autoMacros: { ...a, rateKgWeek } })}
+          options={RATES.map((r) => ({ value: r, label: r === 0 ? '0' : `${r > 0 ? '+' : '−'}${Math.abs(r)}` }))} />
+      )}
+      {a.on && <View style={{ padding: 12 }}><Button label={busy ? 'Calculating…' : 'Recalculate now'} variant="ghost" onPress={runNow} /></View>}
+    </Group>
     <Group title="Daily goals" footer={`Your macros add up to ${Math.round(macroKcal)} kcal (protein and carbs 4 kcal/g, fat 9 kcal/g).`}>
       {GOAL_FIELDS.map((f) => (
         <FieldRow key={f.key} label={f.label}>
@@ -463,6 +489,7 @@ function GoalsSection() {
         </FieldRow>
       ))}
     </Group>
+    </>
   );
 }
 

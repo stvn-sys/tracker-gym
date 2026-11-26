@@ -31,3 +31,6 @@ export const DEFAULT_GOALS: Goals = {
 
 export const getGoals = async (db: SQLiteDatabase) => ({ ...DEFAULT_GOALS, ...(await getJSON<Partial<Goals>>(db, 'goals', {})) });
 export const setGoals = (db: SQLiteDatabase, g: Goals) => setJSON(db, 'goals', g);
+
+/** True once the user has saved their own goals (otherwise defaults are used). */
+export const goalsSet = async (db: SQLiteDatabase) => (await getJSON<Partial<Goals> | null>(db, 'goals', null)) != null;
