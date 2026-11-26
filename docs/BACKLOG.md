@@ -6,6 +6,11 @@
   closest cards, Ranks view, e1RM-per-rank table, strength standards file and its
   profile inputs if only used for ranking. Keep e1RM progress graphs and volume.
 
+## Food entry
+- When adding food, open straight into the food database search (search field
+  focused, Scan button next to it). Manual entry ("Add it myself") becomes a
+  button instead of the default view.
+
 ## Possibly
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
   RestingHeartRate (lowest sustained overnight value). Ask the user first.
