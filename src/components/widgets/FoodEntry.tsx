@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
+import { FoodSearch } from '../food/FoodSearch';
 import { useSQLiteContext } from 'expo-sqlite';
 import { MEAL_LABEL, type Meal } from '../../domain/meals';
 import { addFood, recentFoods, type FoodInput } from '../../repo/food';
@@ -13,11 +14,18 @@ export function FoodEntry({ date, meal, onClose, onSaved }: { date: string; meal
   const [recent, setRecent] = useState<FoodInput[]>([]);
   useEffect(() => { if (meal) recentFoods(db).then(setRecent); }, [db, meal]);
 
-  const save = async (f: FoodInput) => {
-    if (!meal) return;
-    await addFood(db, date, meal, f);
+  const [search, setSearch] = useState<'search' | 'scan' | null>(null);
+
+  const save = async (f: FoodInput, toMeal: Meal | null = meal) => {
+    if (!toMeal) return;
+    await addFood(db, date, toMeal, f);
+    setSearch(null);
     onSaved();
   };
+
+  if (meal && search) {
+    return <FoodSearch meal={meal} scan={search === 'scan'} onAdd={(m, f) => save(f, m)} onClose={() => setSearch(null)} />;
+  }
 
   return (
     <EntryModal
@@ -39,6 +47,16 @@ export function FoodEntry({ date, meal, onClose, onSaved }: { date: string; meal
         save({ name: v.name ?? '', calories: kcal, proteinG: p, fatG: f, carbsG: c });
       }}
     >
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <Pressable onPress={() => setSearch('search')} style={bigBtn()}>
+          <Text style={{ color: '#0B0B0D', fontWeight: '800' }}>Search food database</Text>
+        </Pressable>
+        {Platform.OS !== 'web' && (
+          <Pressable onPress={() => setSearch('scan')} style={[bigBtn(), { flex: 0, paddingHorizontal: 16, backgroundColor: colors.surfaceAlt }]}>
+            <Text style={{ color: colors.text, fontWeight: '800' }}>Scan</Text>
+          </Pressable>
+        )}
+      </View>
       {recent.length > 0 && (
         <View style={{ gap: 6 }}>
           <Text style={styles.dim}>Recent — tap to add</Text>
@@ -53,6 +71,9 @@ export function FoodEntry({ date, meal, onClose, onSaved }: { date: string; meal
           </View>
         </View>
       )}
+      <Text style={[styles.dim, { marginTop: 4 }]}>Or enter it yourself</Text>
     </EntryModal>
   );
 }
+
+const bigBtn = () => ({ flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center', backgroundColor: colors.accent } as const);

@@ -32,7 +32,14 @@
     "plugins": [
       "expo-router",
       "expo-sqlite",
-      "expo-audio"
+      "expo-audio",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Tracker Gym uses the camera to scan food barcodes and take progress photos.",
+          "recordAudioAndroid": false
+        }
+      ]
     ],
     "scheme": "trackergym",
     "backgroundColor": "#0B0D17",
