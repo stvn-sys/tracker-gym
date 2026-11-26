@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { showAlert } from '../../components/Dialog';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { RIR_COLORS } from '../../components/NumPad';
@@ -24,7 +25,7 @@ export default function WorkoutDetailScreen() {
   const date = new Date(w.startedAt);
 
   const remove = () =>
-    Alert.alert('Delete this workout?', 'It is removed from history and rankings.', [
+    showAlert('Delete this workout?', 'It is removed from history and rankings.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => { await discardWorkout(db, w.id); router.back(); } },
     ]);

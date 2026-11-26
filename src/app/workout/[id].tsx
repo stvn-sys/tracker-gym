@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, Text, TextInput, Vibration, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, TextInput, Vibration, View } from 'react-native';
+import { showAlert } from '../../components/Dialog';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { ExercisePicker } from '../../components/ExercisePicker';
@@ -119,14 +120,14 @@ export default function ActiveWorkout() {
   };
 
   const removeSet = (s: WorkoutSet) =>
-    Alert.alert('Delete set?', undefined, [
+    showAlert('Delete set?', undefined, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => { setSel(null); await deleteSet(db, s.id); reload(); } },
     ]);
 
   const finish = () => {
     const done = w.exercises.some((e) => e.sets.some((s) => s.completedAt));
-    Alert.alert(done ? 'Finish workout?' : 'No sets checked off', done ? 'Unchecked sets are dropped.' : 'Discard this workout?', [
+    showAlert(done ? 'Finish workout?' : 'No sets checked off', done ? 'Unchecked sets are dropped.' : 'Discard this workout?', [
       { text: 'Cancel', style: 'cancel' },
       done
         ? { text: 'Finish', onPress: async () => { await finishWorkout(db, w.id); router.replace({ pathname: '/history/[id]', params: { id: w.id } }); } }
@@ -216,13 +217,13 @@ export default function ActiveWorkout() {
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 12 }}>
             <Action label="Warm-up" onPress={async () => {
-              if (we.sets.some((s) => s.isWarmup)) { Alert.alert('Warm-ups already added'); return; }
-              if (!(await addWarmups(db, we))) Alert.alert('Enter a working weight first');
+              if (we.sets.some((s) => s.isWarmup)) { showAlert('Warm-ups already added'); return; }
+              if (!(await addWarmups(db, we))) showAlert('Enter a working weight first');
               reload();
             }} />
             <Action label="Swap" onPress={() => setPicker('swap')} />
             <Action label={we.note ? 'Edit note' : 'Note'} onPress={() => { setNoteText(we.note ?? ''); setNoteOpen(true); }} />
-            <Action label="Remove" onPress={() => Alert.alert(`Remove ${we.exercise.name}?`, undefined, [
+            <Action label="Remove" onPress={() => showAlert(`Remove ${we.exercise.name}?`, undefined, [
               { text: 'Cancel', style: 'cancel' },
               { text: 'Remove', style: 'destructive', onPress: async () => { setSel(null); await removeWorkoutExercise(db, we.id); reload(); } },
             ])} />

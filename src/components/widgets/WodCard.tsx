@@ -1,4 +1,5 @@
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { showAlert } from '../Dialog';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { listRoutines, routineForWeekday } from '../../repo/routines';
@@ -14,7 +15,7 @@ export const openWorkout = (id: string) => router.push({ pathname: '/workout/[id
 export async function startOrResume(db: Parameters<typeof startWorkout>[0], routineId: string | null) {
   const active = await getActiveWorkout(db);
   if (active) {
-    Alert.alert('Workout in progress', `Resume "${active.name}" first, or finish/discard it.`, [
+    showAlert('Workout in progress', `Resume "${active.name}" first, or finish/discard it.`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Resume', onPress: () => openWorkout(active.id) },
     ]);

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { showAlert } from '../Dialog';
 import { useSQLiteContext } from 'expo-sqlite';
 import { bottlesToGoal } from '../../domain/meals';
 import { getGoals } from '../../repo/kv';
@@ -24,7 +25,7 @@ export function WaterCard({ date }: { date: string }) {
   const goal = data.goals.waterMl;
   const remaining = goal - data.total;
 
-  const removeBottle = (id: string, name: string) => Alert.alert(`Remove "${name}"?`, undefined, [
+  const removeBottle = (id: string, name: string) => showAlert(`Remove "${name}"?`, undefined, [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Remove', style: 'destructive', onPress: async () => { await deleteBottle(db, id); bump(); } },
   ]);

@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router';
 import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
+import { DialogHost } from '../components/Dialog';
 import { DataVersionProvider } from '../components/DataVersion';
 import { ProfileProvider } from '../components/ProfileContext';
 import { DB_NAME, initDatabase } from '../db/client';
@@ -21,6 +22,7 @@ export default function RootLayout() {
         >
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         </Stack>
+          <DialogHost />
         </DataVersionProvider>
       </ProfileProvider>
     </SQLiteProvider>

@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, FlatList, Pressable, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
+import { showAlert } from '../Dialog';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Chip, ChipRow, inputStyle, styles } from '../../components/ui';
@@ -33,7 +34,7 @@ export function LibraryView() {
   }, [items, query, muscle, equipment, sort]);
 
   const restore = () =>
-    Alert.alert('Restore defaults?', 'Premade exercises are reset and deleted ones come back. Your own exercises and history are kept.', [
+    showAlert('Restore defaults?', 'Premade exercises are reset and deleted ones come back. Your own exercises and history are kept.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Restore', onPress: () => restoreDefaultExercises(db).then(reload) },
     ]);

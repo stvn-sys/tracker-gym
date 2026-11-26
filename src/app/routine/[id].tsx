@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { showAlert } from '../../components/Dialog';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { ExercisePicker } from '../../components/ExercisePicker';
@@ -42,14 +43,14 @@ export default function RoutineEditor() {
   });
 
   const save = async () => {
-    if (!name.trim()) { Alert.alert('Give the routine a name'); return; }
+    if (!name.trim()) { showAlert('Give the routine a name'); return; }
     const input = { name, weekdays, exercises: items.map(({ exerciseId, targetSets, targetReps }) => ({ exerciseId, targetSets, targetReps })) };
     if (isNew) await createRoutine(db, input);
     else await updateRoutine(db, id, input);
     router.back();
   };
 
-  const remove = () => Alert.alert(`Delete ${name}?`, 'Past workouts stay in your history.', [
+  const remove = () => showAlert(`Delete ${name}?`, 'Past workouts stay in your history.', [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Delete', style: 'destructive', onPress: async () => { await deleteRoutine(db, id); router.back(); } },
   ]);

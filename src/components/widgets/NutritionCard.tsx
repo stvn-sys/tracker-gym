@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { showAlert } from '../Dialog';
 import { useSQLiteContext } from 'expo-sqlite';
 import { mealForTime, MEAL_LABEL, MEALS, sumMacros, type Meal } from '../../domain/meals';
 import { deleteFood, foodForDate } from '../../repo/food';
@@ -17,7 +18,7 @@ export function NutritionCard({ date }: { date: string }) {
   const [meal, setMeal] = useState<Meal | null>(null);
   const [food, bump] = useLoad(() => foodForDate(db, date), [db, date]);
 
-  const remove = (id: string, name: string) => Alert.alert(`Delete ${name}?`, undefined, [
+  const remove = (id: string, name: string) => showAlert(`Delete ${name}?`, undefined, [
     { text: 'Cancel', style: 'cancel' },
     { text: 'Delete', style: 'destructive', onPress: async () => { await deleteFood(db, id); bump(); } },
   ]);

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Alert, ScrollView, Text, TextInput, View } from 'react-native';
+import { ScrollView, Text, TextInput, View } from 'react-native';
+import { showAlert } from '../../components/Dialog';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useProfile } from '../../components/ProfileContext';
@@ -93,7 +94,7 @@ export default function ExerciseEditor() {
   };
 
   const save = async () => {
-    if (!form.name.trim()) { Alert.alert('Name required'); return; }
+    if (!form.name.trim()) { showAlert('Name required'); return; }
     const inc = parseFloat(incrementText.replace(',', '.'));
     const data: ExerciseInput = {
       ...form,
@@ -106,7 +107,7 @@ export default function ExerciseEditor() {
   };
 
   const remove = () =>
-    Alert.alert('Delete exercise?', isBuiltin ? 'You can bring it back with "Restore default exercises".' : 'Your past workouts keep their history.', [
+    showAlert('Delete exercise?', isBuiltin ? 'You can bring it back with "Restore default exercises".' : 'Your past workouts keep their history.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => { await deleteExercise(db, id); router.back(); } },
     ]);
