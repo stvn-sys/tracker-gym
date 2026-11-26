@@ -58,7 +58,7 @@ export const mapExercise = (r: Row): Exercise => ({
   builtinKey: r.builtin_key,
 });
 
-export function seedToInput(e: SeedExercise): ExerciseInput {
+export function seedToInput(e: SeedExercise, brandId: string | null = null, seriesId: string | null = null): ExerciseInput {
   return {
     name: e.name,
     primaryMuscle: e.primary,
@@ -71,9 +71,9 @@ export function seedToInput(e: SeedExercise): ExerciseInput {
     pulleys: e.pulleys,
     restSeconds: null,
     barType: e.barType,
-    notes: null,
-    brandId: null,
-    seriesId: null,
+    notes: e.notes ?? null,
+    brandId,
+    seriesId,
   };
 }
 
@@ -104,8 +104,21 @@ export async function createExercise(db: SQLiteDatabase, e: ExerciseInput, built
   return id;
 }
 
-export const insertSeedExercise = (db: SQLiteDatabase, e: SeedExercise) =>
-  createExercise(db, seedToInput(e), e.key);
+/** Machine brand/series ids for a premade exercise, looked up by name. */
+async function seedBrandIds(db: SQLiteDatabase, e: SeedExercise): Promise<[string | null, string | null]> {
+  if (!e.brand) return [null, null];
+  const b = await db.getFirstAsync<{ id: string }>('SELECT id FROM machine_brands WHERE name = ? AND deleted_at IS NULL', e.brand);
+  if (!b) return [null, null];
+  const s = e.series
+    ? await db.getFirstAsync<{ id: string }>('SELECT id FROM machine_series WHERE brand_id = ? AND name = ? AND deleted_at IS NULL', b.id, e.series)
+    : null;
+  return [b.id, s?.id ?? null];
+}
+
+export async function insertSeedExercise(db: SQLiteDatabase, e: SeedExercise) {
+  const [b, s] = await seedBrandIds(db, e);
+  return createExercise(db, seedToInput(e, b, s), e.key);
+}
 
 export async function updateExercise(db: SQLiteDatabase, id: string, e: ExerciseInput) {
   await db.runAsync(
@@ -131,7 +144,8 @@ export async function restoreDefaultExercises(db: SQLiteDatabase) {
     for (const s of SEED_EXERCISES) {
       const row = await db.getFirstAsync<{ id: string }>('SELECT id FROM exercises WHERE builtin_key = ?', s.key);
       if (row) {
-        await updateExercise(db, row.id, seedToInput(s));
+        const [b, ser] = await seedBrandIds(db, s);
+        await updateExercise(db, row.id, seedToInput(s, b, ser));
         await db.runAsync('UPDATE exercises SET deleted_at = NULL WHERE id = ?', row.id);
       } else {
         await insertSeedExercise(db, s);

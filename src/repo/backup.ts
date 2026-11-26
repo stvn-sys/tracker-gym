@@ -1,5 +1,5 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
-import { seedIfEmpty, seedV2 } from '../db/seed';
+import { seedIfEmpty, seedV2, seedV3 } from '../db/seed';
 
 /**
  * Whole-database backup as JSON. Every table is exported row by row; importing
@@ -59,10 +59,8 @@ export async function importAll(db: SQLiteDatabase, json: string) {
 export async function resetAll(db: SQLiteDatabase) {
   await db.withTransactionAsync(async () => {
     for (const t of await tableNames(db)) await db.runAsync(`DELETE FROM "${t}"`);
-    await db.runAsync(
-      "INSERT INTO routine_groups (id, name, position, is_active, updated_at) VALUES ('default-group', 'My Routine', 0, 1, ?)", Date.now(),
-    );
   });
   await seedIfEmpty(db);
   await seedV2(db);
+  await seedV3(db);
 }

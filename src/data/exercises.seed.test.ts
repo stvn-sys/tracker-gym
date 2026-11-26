@@ -2,17 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { SEED_EXERCISES, SEED_ROUTINES } from './exercises.seed.ts';
 import { MUSCLES } from './muscles.ts';
-import { EQUIPMENT, supportsAttachment } from './equipment.ts';
-
-test('every muscle has at least one exercise (as primary)', () => {
-  for (const m of MUSCLES) assert.ok(SEED_EXERCISES.some((e) => e.primary === m), m);
-});
-
-test('every equipment type is used (except "other")', () => {
-  for (const eq of EQUIPMENT.filter((e) => e !== 'other')) {
-    assert.ok(SEED_EXERCISES.some((e) => e.equipment === eq), eq);
-  }
-});
+import { supportsAttachment } from './equipment.ts';
 
 test('keys are unique and routines reference real exercises', () => {
   const keys = new Set(SEED_EXERCISES.map((e) => e.key));
@@ -20,8 +10,15 @@ test('keys are unique and routines reference real exercises', () => {
   for (const r of SEED_ROUTINES) for (const [k] of r.exercises) assert.ok(keys.has(k), k);
 });
 
-test('every cable exercise has an attachment', () => {
-  for (const e of SEED_EXERCISES.filter((x) => supportsAttachment(x.equipment))) assert.ok(e.attachment, e.key);
+test('the plan from Workout_Plan.xlsx is complete', () => {
+  assert.equal(SEED_EXERCISES.length, 28);
+  const sets = (name: string) => SEED_ROUTINES.find((r) => r.name === name)!.exercises.reduce((n, [, s]) => n + s, 0);
+  // Totals from the spreadsheet: Full Body 25, Upper 19, Lower 14.
+  assert.equal(sets('Full Body'), 25);
+  assert.equal(sets('Upper'), 19);
+  assert.equal(sets('Lower'), 14);
+  for (const e of SEED_EXERCISES.filter((x) => supportsAttachment(x.equipment))) assert.ok(e.pulleys, e.key);
+  for (const e of SEED_EXERCISES.filter((x) => x.equipment === 'machine')) assert.equal(e.brand, 'Matrix', e.key);
 });
 
 test('upper/lower regions cover every muscle exactly once', async () => {

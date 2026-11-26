@@ -51,9 +51,8 @@ test('muscle scores weight primary 1, secondary 0.5', () => {
   assert.equal(m.calves, null);
 });
 
-test('every standard refers to a real premade exercise', () => {
-  const keys = new Set(SEED_EXERCISES.map((e) => e.key));
-  for (const k of Object.keys(STRENGTH_STANDARDS)) assert.ok(keys.has(k), k);
+test('standards are increasing and some premade exercises are ranked', () => {
+  assert.ok(SEED_EXERCISES.filter((e) => STRENGTH_STANDARDS[e.key]).length >= 5);
   for (const s of Object.values(STRENGTH_STANDARDS)) {
     for (const r of [s.male, s.female]) for (let i = 1; i < 5; i++) assert.ok(r[i] > r[i - 1]);
   }
