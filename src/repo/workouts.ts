@@ -83,8 +83,8 @@ async function insertSet(db: SQLiteDatabase, weId: string, position: number, wei
 }
 
 /** Create sets for an exercise, pre-filled from its last session. */
-async function prefillSets(db: SQLiteDatabase, weId: string, exerciseId: string, targetSets: number, targetReps: number | null) {
-  const prev = await lastSessionSets(db, exerciseId);
+async function prefillSets(db: SQLiteDatabase, weId: string, exerciseId: string, targetSets: number, targetReps: number | null, usePrevious = true) {
+  const prev = usePrevious ? await lastSessionSets(db, exerciseId) : [];
   const count = Math.max(targetSets, 1);
   for (let i = 0; i < count; i++) {
     const p = prev[i] ?? prev[prev.length - 1];
@@ -93,7 +93,7 @@ async function prefillSets(db: SQLiteDatabase, weId: string, exerciseId: string,
 }
 
 export async function addExerciseToWorkout(
-  db: SQLiteDatabase, workoutId: string, exerciseId: string, targetSets = 3, targetReps: number | null = null,
+  db: SQLiteDatabase, workoutId: string, exerciseId: string, targetSets = 3, targetReps: number | null = null, usePrevious = true,
 ) {
   const pos = await db.getFirstAsync<{ n: number }>(
     'SELECT COALESCE(MAX(position) + 1, 0) AS n FROM workout_exercises WHERE workout_id = ? AND deleted_at IS NULL',
@@ -104,11 +104,11 @@ export async function addExerciseToWorkout(
     'INSERT INTO workout_exercises (id, workout_id, exercise_id, position, updated_at) VALUES (?, ?, ?, ?, ?)',
     weId, workoutId, exerciseId, pos?.n ?? 0, now(),
   );
-  await prefillSets(db, weId, exerciseId, targetSets, targetReps);
+  await prefillSets(db, weId, exerciseId, targetSets, targetReps, usePrevious);
   return weId;
 }
 
-export async function startWorkout(db: SQLiteDatabase, routineId: string | null): Promise<string> {
+export async function startWorkout(db: SQLiteDatabase, routineId: string | null, usePrevious = true): Promise<string> {
   const id = newId();
   await db.withTransactionAsync(async () => {
     const routine = routineId
@@ -126,7 +126,7 @@ export async function startWorkout(db: SQLiteDatabase, routineId: string | null)
        WHERE re.routine_id = ? AND re.deleted_at IS NULL AND e.deleted_at IS NULL ORDER BY re.position`,
       routineId,
     );
-    for (const it of items) await addExerciseToWorkout(db, id, it.exercise_id, it.target_sets, it.target_reps);
+    for (const it of items) await addExerciseToWorkout(db, id, it.exercise_id, it.target_sets, it.target_reps, usePrevious);
   });
   return id;
 }

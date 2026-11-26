@@ -7,9 +7,9 @@ import { ExercisePicker } from '../../components/ExercisePicker';
 import { Button, Card, Chip, ChipRow, inputStyle, SectionTitle, styles } from '../../components/ui';
 import { createRoutine, deleteRoutine, getRoutine, updateRoutine } from '../../repo/routines';
 import { colors } from '../../theme/colors';
+import { usePrefs } from '../../components/Prefs';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
 interface Item { key: string; exerciseId: string; name: string; targetSets: number; targetReps: number }
 
@@ -21,6 +21,8 @@ export default function RoutineEditor() {
   const [weekdays, setWeekdays] = useState<number[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [picking, setPicking] = useState(false);
+  const { prefs } = usePrefs();
+  const WEEK_ORDER = prefs.weekStart === 1 ? [1, 2, 3, 4, 5, 6, 0] : [0, 1, 2, 3, 4, 5, 6];
 
   useEffect(() => {
     if (isNew) return;

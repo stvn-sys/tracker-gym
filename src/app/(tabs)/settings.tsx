@@ -1,99 +1,90 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useDataVersion } from '../../components/DataVersion';
-import { useSubTab } from '../../components/SubTabs';
-import { DEFAULT_GOALS, getGoals, setGoals, type Goals } from '../../repo/kv';
-import { ScrollView, Text, TextInput, View } from 'react-native';
+import { Icon, type IconName } from '../../components/Icon';
+import { usePrefs } from '../../components/Prefs';
 import { useProfile } from '../../components/ProfileContext';
-import { Card, Chip, SectionTitle, styles } from '../../components/ui';
-import { colors } from '../../theme/colors';
+import { Group, NavRow } from '../../components/SettingsUI';
+import { styles } from '../../components/ui';
+import { useLoad } from '../../components/widgets/common';
+import { APP_VERSION } from '../../data/appInfo';
+import { EQUIPMENT } from '../../data/equipment';
+import { getGoals } from '../../repo/kv';
+import { colors, TILE } from '../../theme/colors';
+
+
+interface RowDef { section: string; label: string; icon: IconName; tile: string; value: string; keywords: string }
 
 export default function Settings() {
-  const { profile, update } = useProfile();
-  const sub = useSubTab('settings');
-  const [age, setAge] = useState(profile.age?.toString() ?? '');
-
-  return (
-    <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingBottom: 48 }]}>
-      {sub === 'Profile' && (<>
-      <SectionTitle>Units</SectionTitle>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
-        <Chip label="kg" active={profile.unit === 'kg'} onPress={() => update('unit', 'kg')} />
-        <Chip label="lbs" active={profile.unit === 'lbs'} onPress={() => update('unit', 'lbs')} />
-      </View>
-
-      <SectionTitle>Profile</SectionTitle>
-      <Card style={{ gap: 12 }}>
-        <Text style={styles.dim}>Gender (for strength standards)</Text>
-        <View style={{ flexDirection: 'row', gap: 8 }}>
-          <Chip label="Male" active={profile.gender === 'male'} onPress={() => update('gender', 'male')} />
-          <Chip label="Female" active={profile.gender === 'female'} onPress={() => update('gender', 'female')} />
-        </View>
-        <Text style={styles.dim}>Age</Text>
-        <TextInput
-          value={age || (profile.age?.toString() ?? '')}
-          onChangeText={setAge}
-          onEndEditing={() => update('age', age ? Number(age) : null)}
-          keyboardType="number-pad"
-          placeholder="e.g. 30"
-          placeholderTextColor={colors.textDim}
-          style={{ color: colors.text, backgroundColor: colors.surfaceAlt, borderRadius: 10, padding: 12, fontSize: 16 }}
-        />
-        <Text style={styles.dim}>Bodyweight comes from the bodyweight log on Home.</Text>
-      </Card>
-
-      <SectionTitle>Rest timer</SectionTitle>
-      <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-        {[60, 90, 120, 180, 240].map((s) => (
-          <Chip key={s} label={`${s / 60} min`} active={profile.restSeconds === s} onPress={() => update('restSeconds', s)} />
-        ))}
-      </View>
-      </>)}
-      {sub === 'Goals' && (<>
-        <SectionTitle>Daily goals</SectionTitle>
-        <GoalsEditor />
-      </>)}
-    </ScrollView>
-  );
-}
-
-const GOAL_FIELDS: { key: keyof Goals; label: string }[] = [
-  { key: 'calories', label: 'Calories (kcal)' },
-  { key: 'proteinG', label: 'Protein (g)' },
-  { key: 'fatG', label: 'Fat (g)' },
-  { key: 'carbsG', label: 'Carbs (g)' },
-  { key: 'waterMl', label: 'Water (ml)' },
-  { key: 'steps', label: 'Steps' },
-  { key: 'sleepMin', label: 'Sleep (minutes)' },
-];
-
-function GoalsEditor() {
   const db = useSQLiteContext();
-  const { bump } = useDataVersion();
-  const [goals, setLocal] = useState<Goals>(DEFAULT_GOALS);
-  useEffect(() => { getGoals(db).then(setLocal); }, [db]);
+  const { prefs } = usePrefs();
+  const { profile } = useProfile();
+  const [query, setQuery] = useState('');
+  const [goals] = useLoad(() => getGoals(db), [db]);
 
-  const change = (key: keyof Goals, text: string) => {
-    const v = parseFloat(text.replace(',', '.'));
-    const next = { ...goals, [key]: Number.isFinite(v) && v > 0 ? v : goals[key] };
-    setLocal(next);
-    setGoals(db, next).then(bump);
-  };
+  const rest = `${Math.floor(profile.restSeconds / 60)}:${String(profile.restSeconds % 60).padStart(2, '0')}`;
+  const reminders = [prefs.remindWorkout.on && 'Workout', prefs.remindWeigh.on && 'Weigh-in', prefs.remindWater.on && 'Water'].filter(Boolean);
+  const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
+
+  const groups: RowDef[][] = [
+    [
+      { section: 'workout', label: 'Workout', icon: 'play', tile: TILE.green, value: `${rest} rest · ${prefs.autoRest ? 'Auto timer' : 'Manual timer'}`, keywords: 'rest timer prefill previous awake' },
+      { section: 'alerts', label: 'Timer alerts', icon: 'speaker', tile: TILE.pink, value: [prefs.sound && 'Sound', prefs.vibrate && 'Vibrate'].filter(Boolean).join(' · ') || 'Silent', keywords: 'sound vibrate vibration beep' },
+      { section: 'reminders', label: 'Reminders', icon: 'bell', tile: TILE.red, value: reminders.length ? reminders.join(' · ') : 'Off', keywords: 'notification notify water weigh' },
+    ],
+    [
+      { section: 'schedule', label: 'Plan & schedule', icon: 'calendar', tile: TILE.orange, value: `${prefs.schedule === 'rotation' ? 'Rotation' : 'Weekdays'} · ${prefs.weekStart === 1 ? 'Mon' : 'Sun'}`, keywords: 'routine rotation week start day' },
+      { section: 'units', label: 'Units & language', icon: 'ruler', tile: TILE.cyan, value: `${profile.unit} · ${prefs.lengthUnit} · English`, keywords: 'kg lbs pounds cm inches language' },
+      { section: 'equipment', label: 'Equipment', icon: 'dumbbell', tile: TILE.indigo, value: prefs.equipment.length >= EQUIPMENT.length ? 'Everything' : `${prefs.equipment.length} of ${EQUIPMENT.length}`, keywords: 'gym machines barbell dumbbell cable available' },
+      { section: 'goals', label: 'Nutrition & goals', icon: 'target', tile: TILE.teal, value: goals ? `${goals.calories} kcal` : '', keywords: 'calories protein fat carbs water steps sleep macros' },
+    ],
+    [
+      { section: 'look', label: 'Look & Home', icon: 'palette', tile: TILE.purple, value: `${cap(prefs.theme)} · ${cap(prefs.accent)}`, keywords: 'theme color accent dark black layout home' },
+    ],
+    [
+      { section: 'data', label: 'Data & backup', icon: 'folder', tile: TILE.blue, value: '', keywords: 'export import backup restore reset delete' },
+      { section: 'about', label: 'About', icon: 'info', tile: TILE.gray, value: `v${APP_VERSION}`, keywords: 'version privacy' },
+    ],
+  ];
+
+  const q = query.trim().toLowerCase();
+  const visible = groups
+    .map((g) => g.filter((r) => !q || `${r.label} ${r.keywords} ${r.value}`.toLowerCase().includes(q)))
+    .filter((g) => g.length);
+  const open = (section: string) => router.push({ pathname: '/pref/[section]', params: { section } });
 
   return (
-    <Card style={{ gap: 10 }}>
-      {GOAL_FIELDS.map((f) => (
-        <View key={f.key} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Text style={[styles.text, { flex: 1 }]}>{f.label}</Text>
-          <TextInput
-            defaultValue={String(goals[f.key])}
-            key={`${f.key}-${goals[f.key]}`}
-            onEndEditing={(e) => change(f.key, e.nativeEvent.text)}
-            keyboardType="number-pad"
-            style={{ color: colors.text, backgroundColor: colors.surfaceAlt, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, width: 110, textAlign: 'right', fontSize: 16 }}
-          />
-        </View>
+    <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { gap: 22, paddingBottom: 48 }]} keyboardShouldPersistTaps="handled">
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: colors.surface, borderRadius: 12, paddingHorizontal: 12 }}>
+        <Icon name="search" size={18} color={colors.textDim} />
+        <TextInput value={query} onChangeText={setQuery} placeholder="Search…" placeholderTextColor={colors.textDim}
+          style={{ flex: 1, minWidth: 0, color: colors.text, fontSize: 17, paddingVertical: 10 }} />
+      </View>
+
+      {!q && (
+        <Pressable onPress={() => open('profile')} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: colors.surface, borderRadius: 18, padding: 14 }}>
+          <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="person" size={30} color={colors.textDim} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: colors.text, fontSize: 20, fontWeight: '800' }}>{prefs.name || 'This phone'}</Text>
+            <Text style={{ color: colors.textDim, fontSize: 14 }}>
+              {[profile.gender && cap(profile.gender), profile.age && `${profile.age} y`].filter(Boolean).join(' · ') || 'Set up your profile'} · data stays on this phone
+            </Text>
+          </View>
+          <Icon name="chevron" size={18} color={colors.textDim} />
+        </Pressable>
+      )}
+
+      {visible.map((g, i) => (
+        <Group key={i}>
+          {g.map((r) => <NavRow key={r.section} icon={r.icon} tile={r.tile} label={r.label} value={r.value} onPress={() => open(r.section)} />)}
+        </Group>
       ))}
-    </Card>
+      {visible.length === 0 && <Text style={[styles.dim, { textAlign: 'center' }]}>No settings match “{query}”.</Text>}
+
+      <Text style={{ color: colors.textDim, textAlign: 'center', fontSize: 13 }}>Tracker Gym v{APP_VERSION}</Text>
+    </ScrollView>
   );
 }

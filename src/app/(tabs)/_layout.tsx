@@ -27,8 +27,10 @@ export default function TabsLayout() {
         screenOptions={{
           headerStyle: { backgroundColor: colors.bg },
           headerTintColor: colors.text,
-          headerTitleStyle: { fontWeight: '800', fontSize: 22 },
-          tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
+          headerTitleStyle: { fontWeight: '800', fontSize: 30, letterSpacing: -0.5 },
+          headerTitleAlign: 'left',
+          headerShadowVisible: false,
+          tabBarStyle: { backgroundColor: colors.bg, borderTopColor: colors.surface },
           tabBarActiveTintColor: colors.accent,
           tabBarInactiveTintColor: colors.textDim,
           sceneStyle: { backgroundColor: colors.bg },

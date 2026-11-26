@@ -2,7 +2,9 @@ import { Pressable, Text, View } from 'react-native';
 import { showAlert } from '../Dialog';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { activeWorkouts, routineForWeekday } from '../../repo/routines';
+import { loadPrefs } from '../../repo/prefs';
+import { activeWorkouts, nextInRotation, routineForWeekday } from '../../repo/routines';
+import { usePrefs } from '../Prefs';
 import { getActiveWorkout, startWorkout } from '../../repo/workouts';
 import { colors } from '../../theme/colors';
 import { styles } from '../ui';
@@ -21,21 +23,24 @@ export async function startOrResume(db: Parameters<typeof startWorkout>[0], rout
     ]);
     return;
   }
-  openWorkout(await startWorkout(db, routineId));
+  const prefs = await loadPrefs(db);
+  openWorkout(await startWorkout(db, routineId, prefs.prefill));
 }
 
 export function WodCard() {
   const db = useSQLiteContext();
   const today = new Date().getDay();
+  const { prefs } = usePrefs();
+  const rotation = prefs.schedule === 'rotation';
   const [data] = useLoad(async () => ({
-    wod: routineForWeekday(await activeWorkouts(db), today),
+    wod: rotation ? await nextInRotation(db) : routineForWeekday(await activeWorkouts(db), today),
     active: await getActiveWorkout(db),
-  }), [db, today]);
+  }), [db, today, rotation]);
   const wod = data?.wod;
   const active = data?.active;
 
   return (
-    <WidgetCard title={`Workout of the day · ${DAYS[today]}`}>
+    <WidgetCard title={rotation ? 'Next workout' : `Workout of the day · ${DAYS[today]}`}>
       <Text style={[styles.text, { fontSize: 24, fontWeight: '800' }]}>{wod ? wod.name : 'Rest day'}</Text>
       <Text style={styles.dim} numberOfLines={3}>
         {wod ? wod.exercises.map((e) => e.exerciseName).join(' · ') : 'Nothing scheduled. You can still start an empty workout.'}

@@ -189,3 +189,15 @@ export async function reorderGroups(db: SQLiteDatabase, ids: string[]) {
     for (const [i, id] of ids.entries()) await db.runAsync('UPDATE routine_groups SET position = ?, updated_at = ? WHERE id = ?', i, t, id);
   });
 }
+
+/** Next workout of the active routine after the most recently finished one (rotation mode). */
+export async function nextInRotation(db: SQLiteDatabase): Promise<Routine | null> {
+  const list = await activeWorkouts(db);
+  if (!list.length) return null;
+  const last = await db.getFirstAsync<{ routine_id: string }>(
+    `SELECT routine_id FROM workouts WHERE ended_at IS NOT NULL AND deleted_at IS NULL AND routine_id IS NOT NULL
+     ORDER BY started_at DESC LIMIT 1`,
+  );
+  const i = list.findIndex((w) => w.id === last?.routine_id);
+  return list[(i + 1) % list.length];
+}

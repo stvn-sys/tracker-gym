@@ -38,19 +38,30 @@ export function Button({ label, onPress, variant = 'primary' }: { label: string;
 }
 
 export const inputStyle = {
-  color: colors.text, backgroundColor: colors.surfaceAlt, borderRadius: 12,
-  paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, borderWidth: 1, borderColor: colors.border,
-} as const;
+  get color() { return colors.text; },
+  get backgroundColor() { return colors.surfaceAlt; },
+  borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, borderWidth: 0,
+};
 
-export const styles = StyleSheet.create({
+const makeStyles = () => StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 16, gap: 12 },
-  card: { backgroundColor: colors.surface, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: colors.border },
-  section: { color: colors.text, fontSize: 20, fontWeight: '700', marginTop: 8 },
+  card: { backgroundColor: colors.surface, borderRadius: 18, padding: 16 },
+  section: { color: colors.text, fontSize: 22, fontWeight: '800', marginTop: 10, letterSpacing: -0.3 },
   text: { color: colors.text, fontSize: 16 },
   dim: { color: colors.textDim, fontSize: 14 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.surfaceAlt },
   chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
   chipText: { color: colors.text, fontWeight: '600' },
   chipTextActive: { color: '#06121F' },
+});
+
+/** Styles are rebuilt when the theme changes (colors is updated in place). */
+let cache: { key: string; value: ReturnType<typeof makeStyles> } | null = null;
+export const styles = new Proxy({} as ReturnType<typeof makeStyles>, {
+  get(_, prop: string) {
+    const key = colors.bg + colors.accent;
+    if (!cache || cache.key !== key) cache = { key, value: makeStyles() };
+    return cache.value[prop as keyof ReturnType<typeof makeStyles>];
+  },
 });

@@ -6,7 +6,6 @@ import { colors } from '../theme/colors';
 export const SUBTABS: Record<string, string[]> = {
   fitness: ['Routines', 'Log', 'Library', 'Ranks'],
   health: ['Metrics', 'Weight', 'Measurements', 'Photo Progress'],
-  settings: ['Profile', 'Goals'],
 };
 
 const Ctx = createContext<{ active: Record<string, string>; set: (route: string, sub: string) => void }>({
@@ -32,7 +31,7 @@ export function SubTabRow({ route }: { route: string }) {
   const subs = SUBTABS[route] ?? [];
   if (!subs.length) return null;
   return (
-    <View style={{ backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border }}>
+    <View style={{ backgroundColor: colors.bg, borderTopWidth: 1, borderTopColor: colors.surface }}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 12, paddingVertical: 8, gap: 8, flexGrow: 1, justifyContent: 'center' }}>
         {subs.map((s) => {

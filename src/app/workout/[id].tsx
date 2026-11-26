@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, TextInput, Vibration, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useKeepAwake } from 'expo-keep-awake';
+import { restAlert } from '../../components/alerts';
+import { usePrefs } from '../../components/Prefs';
 import { showAlert } from '../../components/Dialog';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -37,6 +40,8 @@ export default function ActiveWorkout() {
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [rest, setRest] = useState<{ endsAt: number; total: number } | null>(null);
   const buzzed = useRef(false);
+  const warned = useRef(false);
+  const { prefs } = usePrefs();
 
   const reload = useCallback(async () => {
     const d = await getWorkout(db, id);
@@ -57,11 +62,17 @@ export default function ActiveWorkout() {
 
   const restLeft = rest ? Math.max(0, rest.endsAt - nowMs) : 0;
   useEffect(() => {
-    if (rest && restLeft === 0 && !buzzed.current) {
-      buzzed.current = true;
-      Vibration.vibrate([0, 400, 200, 400]);
+    if (!rest) return;
+    const opts = { vibrate: prefs.vibrate, sound: prefs.sound };
+    if (prefs.warn10 && restLeft > 0 && restLeft <= 10_000 && !warned.current && rest.total > 15) {
+      warned.current = true;
+      restAlert('warn', opts);
     }
-  }, [rest, restLeft]);
+    if (restLeft === 0 && !buzzed.current) {
+      buzzed.current = true;
+      restAlert('done', opts);
+    }
+  }, [rest, restLeft, prefs.vibrate, prefs.sound, prefs.warn10]);
 
   if (!w) return <View style={styles.screen} />;
   const we = w.exercises[idx];
@@ -111,12 +122,17 @@ export default function ActiveWorkout() {
     else setSel(null);
   };
 
+  const startRest = () => {
+    buzzed.current = false;
+    warned.current = false;
+    setRest({ endsAt: Date.now() + profile.restSeconds * 1000, total: profile.restSeconds });
+  };
+
   const toggleComplete = (s: WorkoutSet) => {
     if (s.completedAt) { writeSet(s.id, { completedAt: null }); return; }
     writeSet(s.id, { completedAt: Date.now() });
     setSel(null);
-    buzzed.current = false;
-    setRest({ endsAt: Date.now() + profile.restSeconds * 1000, total: profile.restSeconds });
+    if (prefs.autoRest) startRest();
   };
 
   const removeSet = (s: WorkoutSet) =>
@@ -159,6 +175,7 @@ export default function ActiveWorkout() {
 
   return (
     <View style={styles.screen}>
+      {prefs.keepAwake && <KeepAwake />}
       <Stack.Screen
         options={{
           title: formatDuration(nowMs - w.startedAt),
@@ -222,6 +239,7 @@ export default function ActiveWorkout() {
               if (!(await addWarmups(db, we))) showAlert('Enter a working weight first');
               reload();
             }} />
+            {!prefs.autoRest && <Action label="Rest timer" onPress={startRest} />}
             <Action label="Swap" onPress={() => setPicker('swap')} />
             <Action label={we.note ? 'Edit note' : 'Note'} onPress={() => { setNoteText(we.note ?? ''); setNoteOpen(true); }} />
             <Action label="Remove" onPress={() => showAlert(`Remove ${we.exercise.name}?`, undefined, [
@@ -305,7 +323,7 @@ export default function ActiveWorkout() {
         onPick={async (ex) => {
           if (picker === 'swap' && we) await swapExercise(db, we, ex.id);
           else {
-            await addExerciseToWorkout(db, w.id, ex.id);
+            await addExerciseToWorkout(db, w.id, ex.id, 3, null, prefs.prefill);
             setIdx(w.exercises.length);
           }
           setPicker(null);
@@ -327,6 +345,12 @@ export default function ActiveWorkout() {
       </Modal>
     </View>
   );
+}
+
+/** Keeps the screen on while mounted (hooks cannot be conditional, so this wraps the hook). */
+function KeepAwake() {
+  useKeepAwake();
+  return null;
 }
 
 function Action({ label, onPress }: { label: string; onPress: () => void }) {

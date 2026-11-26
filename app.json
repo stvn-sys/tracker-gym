@@ -25,7 +25,8 @@
     },
     "plugins": [
       "expo-router",
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-audio"
     ],
     "scheme": "trackergym",
     "backgroundColor": "#0B0D17"
