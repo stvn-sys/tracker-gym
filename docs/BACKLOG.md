@@ -15,3 +15,20 @@
 ## Possibly
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
   RestingHeartRate (lowest sustained overnight value). Ask the user first.
+
+## Training
+- **Plate calculator**: shows automatically on bar exercises (based on the bar
+  type's weight) — plates per side for the entered weight.
+- **Rest timer on the lock screen**: ongoing notification with countdown, so the
+  app can be closed between sets.
+
+## Nutrition
+- **Self-adjusting macro targets**: weekly update from the averaged weight trend
+  (not single weigh-ins) vs the goal rate.
+- **Saved meals / recipes**: log a usual meal in one tap.
+- **Copy yesterday's meals** (or one meal) to today.
+
+## Health
+- **Recovery score**: sleep (score) + resting HR + HRV vs personal baseline;
+  suggests push / normal / take it easy today. Pairs with the sleep score.
+- **Progress photo comparison**: side-by-side or slider between two dates.
