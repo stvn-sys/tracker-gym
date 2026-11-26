@@ -1,5 +1,11 @@
 # Backlog — for the next version (do when the user asks for a new version)
 
+## Remove ranks
+- Remove everything related to strength ranks: tiers/badges (Bronze…Champion),
+  percentiles, muscle ranks, body map rank colors, radar chart, strongest/weakest/
+  closest cards, Ranks view, e1RM-per-rank table, strength standards file and its
+  profile inputs if only used for ranking. Keep e1RM progress graphs and volume.
+
 ## Possibly
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
   RestingHeartRate (lowest sustained overnight value). Ask the user first.
