@@ -15,11 +15,33 @@ export const MIGRATIONS: string[] = [
     primary_muscle TEXT NOT NULL,
     secondary_muscles TEXT NOT NULL DEFAULT '[]',
     equipment TEXT NOT NULL,
+    increment_kg REAL NOT NULL DEFAULT 2.5,
+    addon_plates TEXT NOT NULL DEFAULT '[]',
+    laterality TEXT,
+    attachment TEXT,
+    brand_id TEXT,
+    series_id TEXT,
     builtin_key TEXT,
     updated_at INTEGER NOT NULL,
     deleted_at INTEGER
   );
   CREATE INDEX idx_exercises_builtin ON exercises(builtin_key);
+
+  CREATE TABLE machine_brands (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    updated_at INTEGER NOT NULL,
+    deleted_at INTEGER
+  );
+
+  CREATE TABLE machine_series (
+    id TEXT PRIMARY KEY NOT NULL,
+    brand_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    updated_at INTEGER NOT NULL,
+    deleted_at INTEGER
+  );
+  CREATE INDEX idx_series_brand ON machine_series(brand_id);
 
   CREATE TABLE routines (
     id TEXT PRIMARY KEY NOT NULL,

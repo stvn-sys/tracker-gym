@@ -2,9 +2,12 @@ import { Tabs } from 'expo-router';
 import { Text } from 'react-native';
 import { colors } from '../../theme/colors';
 
-const icon = (glyph: string) => ({ color }: { color: import("react-native").ColorValue }) => (
-  <Text style={{ color, fontSize: 18 }}>{glyph}</Text>
-);
+function icon(glyph: string) {
+  const TabIcon = ({ color }: { color: import('react-native').ColorValue }) => (
+    <Text style={{ color, fontSize: 18 }}>{glyph}</Text>
+  );
+  return TabIcon;
+}
 
 export default function TabsLayout() {
   return (

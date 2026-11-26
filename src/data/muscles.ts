@@ -12,17 +12,7 @@ export const MUSCLE_LABEL: Record<Muscle, string> = {
   quads: 'Quads', hamstrings: 'Hamstrings', glutes: 'Glutes', calves: 'Calves', adductors: 'Adductors',
 };
 
-export const EQUIPMENT = [
-  'barbell', 'dumbbell', 'cable_2', 'cable_1', 'machine_pin', 'machine_plate',
-  'smith', 'bodyweight', 'kettlebell', 'band',
-] as const;
-export type Equipment = (typeof EQUIPMENT)[number];
-
-export const EQUIPMENT_LABEL: Record<Equipment, string> = {
-  barbell: 'Barbell', dumbbell: 'Dumbbell', cable_2: 'Cable (2-pulley)', cable_1: 'Cable (1-pulley)',
-  machine_pin: 'Machine (pin)', machine_plate: 'Machine (plate)', smith: 'Smith machine',
-  bodyweight: 'Bodyweight', kettlebell: 'Kettlebell', band: 'Band',
-};
+export { EQUIPMENT, EQUIPMENT_LABEL, type Equipment } from './equipment.ts';
 
 /** Groups used for the radar chart (step 5). */
 export const MUSCLE_GROUPS: Record<string, Muscle[]> = {

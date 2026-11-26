@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { colors } from '../theme/colors';
 
 export function Card({ children, style }: { children: ReactNode; style?: ViewStyle }) {
@@ -17,6 +17,30 @@ export function Chip({ label, active, onPress }: { label: string; active?: boole
     </Pressable>
   );
 }
+
+export function ChipRow({ children, wrap }: { children: ReactNode; wrap?: boolean }) {
+  if (wrap) return <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{children}</View>;
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+      {children}
+    </ScrollView>
+  );
+}
+
+export function Button({ label, onPress, variant = 'primary' }: { label: string; onPress: () => void; variant?: 'primary' | 'ghost' | 'danger' }) {
+  const bg = variant === 'primary' ? colors.accent : 'transparent';
+  const fg = variant === 'primary' ? '#06121F' : variant === 'danger' ? colors.danger : colors.text;
+  return (
+    <Pressable onPress={onPress} style={{ backgroundColor: bg, borderRadius: 14, paddingVertical: 14, alignItems: 'center', borderWidth: variant === 'primary' ? 0 : 1, borderColor: variant === 'danger' ? colors.danger : colors.border }}>
+      <Text style={{ color: fg, fontWeight: '700', fontSize: 16 }}>{label}</Text>
+    </Pressable>
+  );
+}
+
+export const inputStyle = {
+  color: colors.text, backgroundColor: colors.surfaceAlt, borderRadius: 12,
+  paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, borderWidth: 1, borderColor: colors.border,
+} as const;
 
 export const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },

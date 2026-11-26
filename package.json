@@ -21,6 +21,8 @@
   "devDependencies": {
     "@types/node": "^26.6.11",
     "@types/react": "~19.3.0",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~58.0.4",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -29,7 +31,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "test": "node --test --experimental-strip-types src/domain/*.test.ts"
+    "test": "node --test --experimental-strip-types src/domain/*.test.ts src/data/*.test.ts",
+    "lint": "expo lint"
   },
   "private": true
 }

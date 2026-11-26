@@ -1,4 +1,5 @@
-import type { Equipment, Muscle } from './muscles';
+import { supportsLaterality, type Equipment, type Laterality } from './equipment.ts';
+import type { Muscle } from './muscles.ts';
 
 export interface SeedExercise {
   key: string; // stable id for "restore defaults" and strength standards
@@ -6,6 +7,8 @@ export interface SeedExercise {
   primary: Muscle;
   secondary: Muscle[];
   equipment: Equipment;
+  laterality: Laterality | null;
+  attachment: string | null;
 }
 
 type Row = [string, string, Muscle, Muscle[], Equipment];
@@ -42,6 +45,8 @@ const rows: Row[] = [
   ['machine_row', 'Machine Row', 'upper_back', ['lats', 'biceps'], 'machine_pin'],
   ['barbell_shrug', 'Barbell Shrug', 'traps', ['forearms'], 'barbell'],
   ['db_shrug', 'Dumbbell Shrug', 'traps', ['forearms'], 'dumbbell'],
+  ['trap_bar_deadlift', 'Trap Bar Deadlift', 'quads', ['glutes', 'hamstrings', 'traps', 'forearms'], 'trap_bar'],
+  ['landmine_row', 'Landmine Row', 'upper_back', ['lats', 'biceps'], 'landmine'],
   ['rack_pull', 'Rack Pull', 'upper_back', ['traps', 'glutes', 'forearms'], 'barbell'],
   ['band_pull_apart', 'Band Pull-Apart', 'rear_delts', ['upper_back'], 'band'],
   // Shoulders
@@ -50,17 +55,20 @@ const rows: Row[] = [
   ['machine_shoulder_press', 'Machine Shoulder Press', 'front_delts', ['triceps'], 'machine_pin'],
   ['smith_shoulder_press', 'Smith Shoulder Press', 'front_delts', ['triceps'], 'smith'],
   ['arnold_press', 'Arnold Press', 'front_delts', ['side_delts', 'triceps'], 'dumbbell'],
+  ['landmine_press', 'Landmine Press', 'upper_chest', ['front_delts', 'triceps'], 'landmine'],
   ['lateral_raise', 'Lateral Raise', 'side_delts', [], 'dumbbell'],
   ['cable_lateral_raise', 'Cable Lateral Raise', 'side_delts', [], 'cable_1'],
   ['machine_lateral_raise', 'Machine Lateral Raise', 'side_delts', [], 'machine_pin'],
   ['front_raise', 'Front Raise', 'front_delts', [], 'dumbbell'],
+  ['plate_front_raise', 'Plate Front Raise', 'front_delts', ['upper_chest'], 'plate'],
   ['rear_delt_fly', 'Rear Delt Fly', 'rear_delts', ['upper_back'], 'dumbbell'],
   ['reverse_pec_deck', 'Reverse Pec Deck', 'rear_delts', ['upper_back'], 'machine_pin'],
   ['face_pull', 'Face Pull', 'rear_delts', ['upper_back', 'traps'], 'cable_1'],
   ['upright_row', 'Upright Row', 'side_delts', ['traps'], 'barbell'],
   // Arms
   ['barbell_curl', 'Barbell Curl', 'biceps', ['forearms'], 'barbell'],
-  ['ez_bar_curl', 'EZ-Bar Curl', 'biceps', ['forearms'], 'barbell'],
+  ['ez_preacher_curl', 'EZ-Bar Preacher Curl', 'biceps', [], 'ez_bar'],
+  ['ez_bar_curl', 'EZ-Bar Curl', 'biceps', ['forearms'], 'ez_bar'],
   ['db_curl', 'Dumbbell Curl', 'biceps', ['forearms'], 'dumbbell'],
   ['hammer_curl', 'Hammer Curl', 'biceps', ['forearms'], 'dumbbell'],
   ['incline_db_curl', 'Incline Dumbbell Curl', 'biceps', [], 'dumbbell'],
@@ -69,7 +77,7 @@ const rows: Row[] = [
   ['bayesian_curl', 'Bayesian Cable Curl', 'biceps', [], 'cable_2'],
   ['band_curl', 'Band Curl', 'biceps', [], 'band'],
   ['close_grip_bench', 'Close-Grip Bench Press', 'triceps', ['chest', 'front_delts'], 'barbell'],
-  ['skull_crusher', 'Skull Crusher', 'triceps', [], 'barbell'],
+  ['skull_crusher', 'Skull Crusher', 'triceps', [], 'ez_bar'],
   ['triceps_pushdown', 'Triceps Pushdown', 'triceps', [], 'cable_1'],
   ['overhead_cable_ext', 'Overhead Cable Extension', 'triceps', [], 'cable_1'],
   ['db_overhead_ext', 'Dumbbell Overhead Extension', 'triceps', [], 'dumbbell'],
@@ -103,14 +111,34 @@ const rows: Row[] = [
   ['kb_swing', 'Kettlebell Swing', 'glutes', ['hamstrings', 'upper_back'], 'kettlebell'],
   ['cable_kickback', 'Cable Glute Kickback', 'glutes', [], 'cable_1'],
   ['hip_abduction', 'Hip Abduction', 'glutes', [], 'machine_pin'],
+  ['cable_hip_adduction', 'Cable Hip Adduction', 'adductors', [], 'cable_1'],
+  ['copenhagen_plank', 'Copenhagen Plank', 'adductors', ['obliques'], 'bodyweight'],
   ['hip_adduction', 'Hip Adduction', 'adductors', [], 'machine_pin'],
   ['standing_calf_raise', 'Standing Calf Raise', 'calves', [], 'machine_pin'],
   ['seated_calf_raise', 'Seated Calf Raise', 'calves', [], 'machine_plate'],
   ['smith_calf_raise', 'Smith Calf Raise', 'calves', [], 'smith'],
 ];
 
+/** Unilateral defaults (everything else with laterality support is bilateral). */
+const UNILATERAL = new Set([
+  'db_row', 'cable_lateral_raise', 'bulgarian_split_squat', 'walking_lunge', 'cable_kickback',
+  'cable_hip_adduction', 'bayesian_curl', 'cable_cross_ext', 'landmine_row', 'pallof_press',
+]);
+
+/** Default attachment for cable exercises. */
+const ATTACHMENT: Record<string, string> = {
+  cable_crossover: 'Single D-handle', low_cable_fly: 'Single D-handle',
+  lat_pulldown: 'Lat bar', close_grip_pulldown: 'V-handle', seated_cable_row: 'V-handle',
+  straight_arm_pulldown: 'Straight bar', cable_lateral_raise: 'Cuff', face_pull: 'Rope',
+  cable_curl: 'EZ bar', bayesian_curl: 'Single D-handle', triceps_pushdown: 'Rope',
+  overhead_cable_ext: 'Rope', cable_cross_ext: 'No attachment', cable_crunch: 'Rope',
+  pallof_press: 'Single D-handle', cable_kickback: 'Ankle strap', cable_hip_adduction: 'Ankle strap',
+};
+
 export const SEED_EXERCISES: SeedExercise[] = rows.map(([key, name, primary, secondary, equipment]) => ({
   key, name, primary, secondary, equipment,
+  laterality: supportsLaterality(equipment) ? (UNILATERAL.has(key) ? 'unilateral' : 'bilateral') : null,
+  attachment: ATTACHMENT[key] ?? null,
 }));
 
 /** Example routines (editable). Weekdays: 0 = Sun … 6 = Sat. */

@@ -1,6 +1,8 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { SEED_EXERCISES, SEED_ROUTINES } from '../data/exercises.seed';
+import { SEED_BRANDS } from '../data/equipment';
 import { newId, now } from '../domain/ids';
+import { insertSeedExercise } from '../repo/exercises';
 
 export async function seedIfEmpty(db: SQLiteDatabase) {
   const seeded = await db.getFirstAsync<{ value: string }>("SELECT value FROM settings WHERE key = 'seeded'");
@@ -10,12 +12,14 @@ export async function seedIfEmpty(db: SQLiteDatabase) {
     const t = now();
     const idByKey: Record<string, string> = {};
     for (const e of SEED_EXERCISES) {
-      const id = newId();
-      idByKey[e.key] = id;
-      await db.runAsync(
-        'INSERT INTO exercises (id, name, primary_muscle, secondary_muscles, equipment, builtin_key, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        id, e.name, e.primary, JSON.stringify(e.secondary), e.equipment, e.key, t,
-      );
+      idByKey[e.key] = await insertSeedExercise(db, e);
+    }
+    for (const b of SEED_BRANDS) {
+      const bid = newId();
+      await db.runAsync('INSERT INTO machine_brands (id, name, updated_at) VALUES (?, ?, ?)', bid, b.name, t);
+      for (const s of b.series) {
+        await db.runAsync('INSERT INTO machine_series (id, brand_id, name, updated_at) VALUES (?, ?, ?, ?)', newId(), bid, s, t);
+      }
     }
     for (const [i, r] of SEED_ROUTINES.entries()) {
       const rid = newId();
