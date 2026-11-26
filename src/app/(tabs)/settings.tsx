@@ -9,7 +9,6 @@ import { Group, NavRow } from '../../components/SettingsUI';
 import { styles } from '../../components/ui';
 import { useLoad } from '../../components/widgets/common';
 import { APP_VERSION } from '../../data/appInfo';
-import { EQUIPMENT } from '../../data/equipment';
 import { getGoals } from '../../repo/kv';
 import { latestBodyweightKg } from '../../repo/bodyweight';
 import { formatBodyweight } from '../../domain/units';
@@ -39,7 +38,6 @@ export default function Settings() {
     [
       { section: 'schedule', label: 'Plan & schedule', icon: 'calendar', tile: TILE.orange, value: `${prefs.schedule === 'rotation' ? 'Rotation' : 'Weekdays'} · ${prefs.weekStart === 1 ? 'Mon' : 'Sun'}`, keywords: 'routine rotation week start day' },
       { section: 'units', label: 'Units & language', icon: 'ruler', tile: TILE.cyan, value: `${profile.unit} · ${prefs.lengthUnit} · English`, keywords: 'kg lbs pounds cm inches language' },
-      { section: 'equipment', label: 'Equipment', icon: 'dumbbell', tile: TILE.indigo, value: prefs.equipment.length >= EQUIPMENT.length ? 'Everything' : `${prefs.equipment.length} of ${EQUIPMENT.length}`, keywords: 'gym machines barbell dumbbell cable available' },
       { section: 'goals', label: 'Nutrition & goals', icon: 'target', tile: TILE.teal, value: goals ? `${goals.calories} kcal` : '', keywords: 'calories protein fat carbs water steps sleep macros' },
     ],
     [

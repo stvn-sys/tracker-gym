@@ -13,7 +13,6 @@ import { ChoiceRow, Group, Step, TimeRow, ToggleRow } from '../../components/Set
 import { Button, inputStyle, styles } from '../../components/ui';
 import { playBeep, buzz } from '../../components/alerts';
 import { APP_VERSION } from '../../data/appInfo';
-import { EQUIPMENT, EQUIPMENT_LABEL } from '../../data/equipment';
 import { exportAll, importAll, resetAll } from '../../repo/backup';
 import { DEFAULT_GOALS, getGoals, setGoals, type Goals } from '../../repo/kv';
 import { latestBodyweightKg, logBodyweight } from '../../repo/bodyweight';
@@ -22,7 +21,7 @@ import { ACCENTS, colors, type Accent } from '../../theme/colors';
 
 const TITLES: Record<string, string> = {
   profile: 'Profile', workout: 'Workout', alerts: 'Timer alerts', reminders: 'Reminders', schedule: 'Plan & schedule',
-  units: 'Units & language', equipment: 'Equipment', goals: 'Nutrition & goals', look: 'Look & Home', data: 'Data & backup', about: 'About',
+  units: 'Units & language', goals: 'Nutrition & goals', look: 'Look & Home', data: 'Data & backup', about: 'About',
 };
 
 export default function PrefSection() {
@@ -36,7 +35,6 @@ export default function PrefSection() {
       {section === 'reminders' && <RemindersSection />}
       {section === 'schedule' && <ScheduleSection />}
       {section === 'units' && <UnitsSection />}
-      {section === 'equipment' && <EquipmentSection />}
       {section === 'goals' && <GoalsSection />}
       {section === 'look' && <LookSection />}
       {section === 'data' && <DataSection />}
@@ -195,23 +193,6 @@ function UnitsSection() {
       </Group>
       <Group footer="The app is in English for now.">
         <FieldRow label="Language"><Text style={{ color: colors.textDim, fontSize: 17 }}>English</Text></FieldRow>
-      </Group>
-    </>
-  );
-}
-
-function EquipmentSection() {
-  const { prefs, setPrefs } = usePrefs();
-  const all = prefs.equipment.length >= EQUIPMENT.length;
-  const toggle = (e: (typeof EQUIPMENT)[number], v: boolean) =>
-    setPrefs({ equipment: v ? [...new Set([...prefs.equipment, e])] : prefs.equipment.filter((x) => x !== e) });
-  return (
-    <>
-      <Group footer="The library and the exercise picker only show exercises you can do with this equipment.">
-        <ToggleRow label="Everything" value={all} onChange={(v) => setPrefs({ equipment: v ? [...EQUIPMENT] : ['bodyweight'] })} />
-      </Group>
-      <Group>
-        {EQUIPMENT.map((e) => <ToggleRow key={e} label={EQUIPMENT_LABEL[e]} value={prefs.equipment.includes(e)} onChange={(v) => toggle(e, v)} />)}
       </Group>
     </>
   );

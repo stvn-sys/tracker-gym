@@ -2,6 +2,7 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 import { newId, now } from '../domain/ids';
 import { volumeKg, warmupSets } from '../domain/workout';
 import { mapExercise, type Exercise } from './exercises';
+import { writeItems } from './routines';
 
 export interface WorkoutSet {
   id: string;
@@ -19,6 +20,8 @@ export interface WorkoutExercise {
   exercise: Exercise;
   position: number;
   note: string | null;
+  /** Exercises sharing this id are done as a superset. */
+  supersetId: string | null;
   sets: WorkoutSet[];
   /** Working sets from the last finished session of this exercise (for the "previous" column). */
   previous: WorkoutSet[];
@@ -120,13 +123,20 @@ export async function startWorkout(db: SQLiteDatabase, routineId: string | null,
       id, routineId, routine?.name ?? 'Workout', t, t,
     );
     if (!routineId) return;
-    const items = await db.getAllAsync<{ exercise_id: string; target_sets: number; target_reps: number }>(
-      `SELECT re.exercise_id, re.target_sets, re.target_reps FROM routine_exercises re
+    const items = await db.getAllAsync<{ exercise_id: string; target_sets: number; target_reps: number; superset_id: string | null }>(
+      `SELECT re.exercise_id, re.target_sets, re.target_reps, re.superset_id FROM routine_exercises re
        JOIN exercises e ON e.id = re.exercise_id
        WHERE re.routine_id = ? AND re.deleted_at IS NULL AND e.deleted_at IS NULL ORDER BY re.position`,
       routineId,
     );
-    for (const it of items) await addExerciseToWorkout(db, id, it.exercise_id, it.target_sets, it.target_reps, usePrevious);
+    const groupIds = new Map<string, string>(); // routine superset id -> this workout's superset id
+    for (const it of items) {
+      const weId = await addExerciseToWorkout(db, id, it.exercise_id, it.target_sets, it.target_reps, usePrevious);
+      if (it.superset_id) {
+        if (!groupIds.has(it.superset_id)) groupIds.set(it.superset_id, newId());
+        await db.runAsync('UPDATE workout_exercises SET superset_id = ? WHERE id = ?', groupIds.get(it.superset_id)!, weId);
+      }
+    }
   });
   return id;
 }
@@ -141,8 +151,8 @@ export async function getActiveWorkout(db: SQLiteDatabase): Promise<Workout | nu
 export async function getWorkout(db: SQLiteDatabase, id: string): Promise<WorkoutDetail | null> {
   const w = await db.getFirstAsync<WorkoutRow>('SELECT * FROM workouts WHERE id = ?', id);
   if (!w) return null;
-  const wes = await db.getAllAsync<{ we_id: string; position: number; note: string | null } & Parameters<typeof mapExercise>[0]>(
-    `SELECT we.id AS we_id, we.position, we.note, e.* FROM workout_exercises we
+  const wes = await db.getAllAsync<{ we_id: string; position: number; note: string | null; superset_id: string | null } & Parameters<typeof mapExercise>[0]>(
+    `SELECT we.id AS we_id, we.position, we.note, we.superset_id, e.* FROM workout_exercises we
      JOIN exercises e ON e.id = we.exercise_id
      WHERE we.workout_id = ? AND we.deleted_at IS NULL ORDER BY we.position`,
     id,
@@ -160,6 +170,7 @@ export async function getWorkout(db: SQLiteDatabase, id: string): Promise<Workou
       exercise,
       position: r.position,
       note: r.note,
+      supersetId: r.superset_id,
       sets: sets.filter((s) => s.workout_exercise_id === r.we_id).map(mapSet),
       previous: await lastSessionSets(db, exercise.id, id),
     });
@@ -294,3 +305,54 @@ export async function exerciseSetHistory(db: SQLiteDatabase, exerciseId: string)
   return rows.map((r) => ({ ...mapSet(r), startedAt: r.started_at, workoutId: r.workout_id }));
 }
 
+
+/* ---------- Supersets ---------- */
+
+/** Links two workout exercises into one superset (joining an existing one if either is in one). */
+export async function linkSuperset(db: SQLiteDatabase, a: WorkoutExercise, b: WorkoutExercise) {
+  const sid = a.supersetId ?? b.supersetId ?? newId();
+  const t = now();
+  await db.runAsync('UPDATE workout_exercises SET superset_id = ?, updated_at = ? WHERE id IN (?, ?)', sid, t, a.id, b.id);
+  // Keep superset members next to each other: move b right after a.
+  const rows = await db.getAllAsync<{ id: string }>(
+    'SELECT id FROM workout_exercises WHERE workout_id = (SELECT workout_id FROM workout_exercises WHERE id = ?) AND deleted_at IS NULL ORDER BY position',
+    a.id,
+  );
+  const order = rows.map((r) => r.id).filter((id) => id !== b.id);
+  order.splice(order.indexOf(a.id) + 1, 0, b.id);
+  for (const [i, id] of order.entries()) await db.runAsync('UPDATE workout_exercises SET position = ? WHERE id = ?', i, id);
+}
+
+export async function unlinkSuperset(db: SQLiteDatabase, we: WorkoutExercise) {
+  await db.runAsync('UPDATE workout_exercises SET superset_id = NULL, updated_at = ? WHERE id = ?', now(), we.id);
+  // A superset of one is no superset: clear a lone remaining partner.
+  if (we.supersetId) {
+    const left = await db.getAllAsync<{ id: string }>('SELECT id FROM workout_exercises WHERE superset_id = ? AND deleted_at IS NULL', we.supersetId);
+    if (left.length === 1) await db.runAsync('UPDATE workout_exercises SET superset_id = NULL WHERE id = ?', left[0].id);
+  }
+}
+
+/**
+ * Writes a workout back into its routine workout: exercise order, supersets and,
+ * for exercises you trained, the number of working sets and reps (from the last
+ * set). Exercises you did not get to keep their planned sets and reps; exercises
+ * you removed during the workout are removed. Call this before finishWorkout().
+ */
+export async function updateRoutineFromWorkout(db: SQLiteDatabase, workoutId: string) {
+  const w = await getWorkout(db, workoutId);
+  if (!w?.routineId) return false;
+  const planned = await db.getAllAsync<{ exercise_id: string; target_sets: number; target_reps: number }>(
+    'SELECT exercise_id, target_sets, target_reps FROM routine_exercises WHERE routine_id = ? AND deleted_at IS NULL',
+    w.routineId,
+  );
+  const plan = new Map(planned.map((p) => [p.exercise_id, p]));
+  const items = w.exercises.map((e) => {
+    const done = e.sets.filter((s) => !s.isWarmup && s.completedAt);
+    const before = plan.get(e.exercise.id);
+    return done.length
+      ? { exerciseId: e.exercise.id, targetSets: done.length, targetReps: done[done.length - 1].reps ?? before?.target_reps ?? 8, supersetId: e.supersetId }
+      : { exerciseId: e.exercise.id, targetSets: before?.target_sets ?? Math.max(1, e.sets.filter((s) => !s.isWarmup).length), targetReps: before?.target_reps ?? 8, supersetId: e.supersetId };
+  });
+  await db.withTransactionAsync(async () => { await writeItems(db, w.routineId!, items); });
+  return true;
+}

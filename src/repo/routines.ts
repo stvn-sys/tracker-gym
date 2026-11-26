@@ -11,6 +11,8 @@ export interface RoutineExercise {
   position: number;
   targetSets: number;
   targetReps: number;
+  /** Exercises sharing this id are done as a superset. */
+  supersetId: string | null;
 }
 
 /** A "workout" in the UI: one training day (e.g. Upper), with weekdays. */
@@ -29,9 +31,9 @@ export async function listRoutines(db: SQLiteDatabase): Promise<Routine[]> {
   );
   const items = await db.getAllAsync<{
     id: string; routine_id: string; exercise_id: string; name: string; primary_muscle: string; secondary_muscles: string;
-    position: number; target_sets: number; target_reps: number;
+    position: number; target_sets: number; target_reps: number; superset_id: string | null;
   }>(
-    `SELECT re.id, re.routine_id, re.exercise_id, e.name, e.primary_muscle, e.secondary_muscles, re.position, re.target_sets, re.target_reps
+    `SELECT re.id, re.routine_id, re.exercise_id, e.name, e.primary_muscle, e.secondary_muscles, re.position, re.target_sets, re.target_reps, re.superset_id
      FROM routine_exercises re JOIN exercises e ON e.id = re.exercise_id
      WHERE re.deleted_at IS NULL AND e.deleted_at IS NULL ORDER BY re.position`,
   );
@@ -46,7 +48,7 @@ export async function listRoutines(db: SQLiteDatabase): Promise<Routine[]> {
       .map((i) => ({
         id: i.id, exerciseId: i.exercise_id, exerciseName: i.name,
         primaryMuscle: i.primary_muscle as Muscle, secondaryMuscles: JSON.parse(i.secondary_muscles),
-        position: i.position, targetSets: i.target_sets, targetReps: i.target_reps,
+        position: i.position, targetSets: i.target_sets, targetReps: i.target_reps, supersetId: i.superset_id,
       })),
   }));
 }
@@ -59,14 +61,14 @@ export interface RoutineInput {
   groupId?: string | null;
   name: string;
   weekdays: number[];
-  exercises: { exerciseId: string; targetSets: number; targetReps: number }[];
+  exercises: { exerciseId: string; targetSets: number; targetReps: number; supersetId?: string | null }[];
 }
 
 export async function getRoutine(db: SQLiteDatabase, id: string): Promise<Routine | null> {
   return (await listRoutines(db)).find((r) => r.id === id) ?? null;
 }
 
-async function writeItems(db: SQLiteDatabase, routineId: string, items: RoutineInput['exercises']) {
+export async function writeItems(db: SQLiteDatabase, routineId: string, items: RoutineInput['exercises']) {
   const t = now();
   await db.runAsync(
     'UPDATE routine_exercises SET deleted_at = ?, updated_at = ? WHERE routine_id = ? AND deleted_at IS NULL',
@@ -74,8 +76,8 @@ async function writeItems(db: SQLiteDatabase, routineId: string, items: RoutineI
   );
   for (const [i, it] of items.entries()) {
     await db.runAsync(
-      'INSERT INTO routine_exercises (id, routine_id, exercise_id, position, target_sets, target_reps, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      newId(), routineId, it.exerciseId, i, it.targetSets, it.targetReps, t,
+      'INSERT INTO routine_exercises (id, routine_id, exercise_id, position, target_sets, target_reps, superset_id, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      newId(), routineId, it.exerciseId, i, it.targetSets, it.targetReps, it.supersetId ?? null, t,
     );
   }
 }

@@ -4,7 +4,7 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { restAlert } from '../../components/alerts';
 import { usePrefs } from '../../components/Prefs';
 import { showAlert } from '../../components/Dialog';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { ExercisePicker } from '../../components/ExercisePicker';
 import { NumPad, RIR_COLORS } from '../../components/NumPad';
@@ -16,7 +16,8 @@ import { formatDuration, volumeKg } from '../../domain/workout';
 import { listBrands, type Brand } from '../../repo/brands';
 import {
   addExerciseToWorkout, addSet, addWarmups, deleteSet, discardWorkout, finishWorkout, getWorkout,
-  removeWorkoutExercise, setExerciseNote, swapExercise, updateSet,
+  linkSuperset, removeWorkoutExercise, setExerciseNote, swapExercise, unlinkSuperset, updateRoutineFromWorkout, updateSet,
+  type WorkoutExercise,
   type WorkoutDetail, type WorkoutSet,
 } from '../../repo/workouts';
 import { colors } from '../../theme/colors';
@@ -36,6 +37,7 @@ export default function ActiveWorkout() {
   const [draft, setDraft] = useState({ text: '', fresh: true });
   const [picker, setPicker] = useState<'swap' | 'add' | null>(null);
   const [noteOpen, setNoteOpen] = useState(false);
+  const [pairOpen, setPairOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [rest, setRest] = useState<{ endsAt: number; total: number } | null>(null);
@@ -49,10 +51,11 @@ export default function ActiveWorkout() {
     if (d) setIdx((i) => Math.min(i, Math.max(d.exercises.length - 1, 0)));
   }, [db, id]);
 
-  useEffect(() => {
+  // Reload when coming back (e.g. after editing an exercise from here).
+  useFocusEffect(useCallback(() => {
     getWorkout(db, id).then(setW);
     listBrands(db).then(setBrands);
-  }, [db, id]);
+  }, [db, id]));
 
   // One ticking clock drives both the workout duration and the rest timer.
   useEffect(() => {
@@ -122,17 +125,34 @@ export default function ActiveWorkout() {
     else setSel(null);
   };
 
-  const startRest = () => {
+  const restFor = (e: WorkoutExercise) => e.exercise.restSeconds ?? profile.restSeconds;
+
+  const startRest = (seconds = we ? restFor(we) : profile.restSeconds) => {
     buzzed.current = false;
     warned.current = false;
-    setRest({ endsAt: Date.now() + profile.restSeconds * 1000, total: profile.restSeconds });
+    setRest({ endsAt: Date.now() + seconds * 1000, total: seconds });
   };
+
+  /** Superset members of an exercise, in workout order (just itself when not in a superset). */
+  const groupOf = (e: WorkoutExercise) => (e.supersetId ? w.exercises.filter((x) => x.supersetId === e.supersetId) : [e]);
 
   const toggleComplete = (s: WorkoutSet) => {
     if (s.completedAt) { writeSet(s.id, { completedAt: null }); return; }
     writeSet(s.id, { completedAt: Date.now() });
     setSel(null);
-    if (prefs.autoRest) startRest();
+    const group = groupOf(we);
+    const pos = group.indexOf(we);
+    if (group.length > 1 && pos < group.length - 1) {
+      // Superset: go straight to the next exercise, rest comes after the round.
+      setIdx(w.exercises.indexOf(group[pos + 1]));
+      return;
+    }
+    if (prefs.autoRest) startRest(restFor(we));
+    if (group.length > 1) {
+      const first = group[0];
+      const firstLeft = first.sets.some((x) => !x.isWarmup && !x.completedAt);
+      if (firstLeft) setIdx(w.exercises.indexOf(first));
+    }
   };
 
   const removeSet = (s: WorkoutSet) =>
@@ -143,11 +163,23 @@ export default function ActiveWorkout() {
 
   const finish = () => {
     const done = w.exercises.some((e) => e.sets.some((s) => s.completedAt));
-    showAlert(done ? 'Finish workout?' : 'No sets checked off', done ? 'Unchecked sets are dropped.' : 'Discard this workout?', [
+    const discard = { text: 'Discard', style: 'destructive' as const, onPress: async () => { await discardWorkout(db, w.id); router.back(); } };
+    const save = async (updateRoutine: boolean) => {
+      if (updateRoutine) await updateRoutineFromWorkout(db, w.id);
+      await finishWorkout(db, w.id);
+      router.replace({ pathname: '/history/[id]', params: { id: w.id } });
+    };
+    if (!done) {
+      showAlert('No sets checked off', 'Discard this workout?', [{ text: 'Keep going', style: 'cancel' }, discard]);
+      return;
+    }
+    showAlert('End workout?', w.routineId
+      ? 'Save it to your history. "Save & update routine" also makes the routine match today: exercise order, supersets, and sets and reps for what you trained. Exercises you skipped keep their plan. Unchecked sets are dropped from the log.'
+      : 'Save it to your history. Unchecked sets are dropped.', [
       { text: 'Cancel', style: 'cancel' },
-      done
-        ? { text: 'Finish', onPress: async () => { await finishWorkout(db, w.id); router.replace({ pathname: '/history/[id]', params: { id: w.id } }); } }
-        : { text: 'Discard', style: 'destructive', onPress: async () => { await discardWorkout(db, w.id); router.back(); } },
+      discard,
+      { text: 'Save', onPress: () => save(false) },
+      ...(w.routineId ? [{ text: 'Save & update routine', onPress: () => save(true) }] : []),
     ]);
   };
 
@@ -169,6 +201,8 @@ export default function ActiveWorkout() {
     we.exercise.laterality === 'unilateral' ? 'Unilateral' : null,
   ].filter(Boolean).join(' · ') : '';
 
+  const supersetIds = [...new Set(w.exercises.map((e) => e.supersetId).filter((x): x is string => !!x))];
+  const letterOf = (sid: string) => String.fromCharCode(65 + Math.max(0, supersetIds.indexOf(sid)));
   const working = we?.sets.filter((s) => !s.isWarmup) ?? [];
   const doneCount = working.filter((s) => s.completedAt).length;
   const totalVolume = volumeKg(w.exercises.flatMap((e) => e.sets));
@@ -211,6 +245,11 @@ export default function ActiveWorkout() {
                 backgroundColor: i === idx ? colors.accentDim : colors.surface,
                 borderWidth: 1, borderColor: i === idx ? colors.accent : complete ? colors.success : colors.border }}>
               <Text numberOfLines={2} style={{ color: colors.text, fontSize: 12, fontWeight: '600' }}>{e.exercise.name}</Text>
+              {e.supersetId && (
+                <View style={{ position: 'absolute', top: -6, right: -4, paddingHorizontal: 5, borderRadius: 6, backgroundColor: colors.accent }}>
+                  <Text style={{ color: '#0B0B0D', fontSize: 10, fontWeight: '900' }}>{letterOf(e.supersetId)}{groupOf(e).indexOf(e) + 1}</Text>
+                </View>
+              )}
               <Text style={{ color: complete ? colors.success : colors.textDim, fontSize: 11 }}>
                 {all.filter((s) => s.completedAt).length}/{all.length}
               </Text>
@@ -229,6 +268,11 @@ export default function ActiveWorkout() {
         </View>
       ) : (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+          {we.supersetId && (
+            <Text style={{ color: colors.accent, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 }}>
+              SUPERSET {letterOf(we.supersetId)} · {groupOf(we).map((x) => x.exercise.name).join(' → ')}
+            </Text>
+          )}
           <Text style={{ color: colors.text, fontSize: 22, fontWeight: '800' }}>{we.exercise.name}</Text>
           <Text style={styles.dim}>{meta}</Text>
           <Text style={[styles.dim, { marginTop: 2 }]}>Set {Math.min(doneCount + 1, working.length)} of {working.length} · Volume {formatWeight(totalVolume, unit)}</Text>
@@ -239,7 +283,11 @@ export default function ActiveWorkout() {
               if (!(await addWarmups(db, we))) showAlert('Enter a working weight first');
               reload();
             }} />
-            {!prefs.autoRest && <Action label="Rest timer" onPress={startRest} />}
+            {!prefs.autoRest && <Action label="Rest timer" onPress={() => startRest(restFor(we))} />}
+            <Action label="Edit" onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: we.exercise.id } })} />
+            {we.supersetId
+              ? <Action label="Unlink superset" onPress={async () => { await unlinkSuperset(db, we); reload(); }} />
+              : <Action label="Superset" onPress={() => setPairOpen(true)} />}
             <Action label="Swap" onPress={() => setPicker('swap')} />
             <Action label={we.note ? 'Edit note' : 'Note'} onPress={() => { setNoteText(we.note ?? ''); setNoteOpen(true); }} />
             <Action label="Remove" onPress={() => showAlert(`Remove ${we.exercise.name}?`, undefined, [
@@ -313,6 +361,22 @@ export default function ActiveWorkout() {
           onStep={onStep}
         />
       )}
+
+      <Modal visible={pairOpen} transparent animationType="fade" onRequestClose={() => setPairOpen(false)}>
+        <Pressable style={{ flex: 1, backgroundColor: '#000a', justifyContent: 'center', padding: 24 }} onPress={() => setPairOpen(false)}>
+          <Pressable style={{ backgroundColor: colors.surface, borderRadius: 18, padding: 16, gap: 8 }}>
+            <Text style={styles.section}>Superset {we?.exercise.name} with…</Text>
+            <Text style={styles.dim}>You do one set of each, then rest.</Text>
+            {w.exercises.filter((e) => e.id !== we?.id).map((e) => (
+              <Pressable key={e.id} onPress={async () => { if (we) await linkSuperset(db, we, e); setPairOpen(false); reload(); }}
+                style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}>
+                <Text style={styles.text}>{e.exercise.name}{e.supersetId ? `  (superset ${letterOf(e.supersetId)})` : ''}</Text>
+              </Pressable>
+            ))}
+            {w.exercises.length < 2 && <Text style={styles.dim}>Add another exercise first.</Text>}
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <ExercisePicker
         visible={picker !== null}

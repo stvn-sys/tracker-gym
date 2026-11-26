@@ -213,4 +213,10 @@ export const MIGRATIONS: string[] = [
     VALUES ('default-group', 'My Routine', 0, 1, CAST(strftime('%s','now') AS INTEGER) * 1000);
   UPDATE routines SET group_id = 'default-group';
   `,
+  // 5: per-exercise rest time, supersets in workouts and routine workouts
+  `
+  ALTER TABLE exercises ADD COLUMN rest_seconds INTEGER;
+  ALTER TABLE workout_exercises ADD COLUMN superset_id TEXT;
+  ALTER TABLE routine_exercises ADD COLUMN superset_id TEXT;
+  `,
 ];

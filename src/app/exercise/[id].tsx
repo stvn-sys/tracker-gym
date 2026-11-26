@@ -22,8 +22,11 @@ const ADDON_OPTIONS_KG = [0.5, 1, 1.25, 2.5];
 const blank: ExerciseInput = {
   name: '', primaryMuscle: 'chest', secondaryMuscles: [], equipment: 'dumbbell',
   incrementKg: DEFAULT_INCREMENT_KG.dumbbell, addonPlatesKg: [], laterality: 'bilateral',
-  attachment: null, pulleys: null, brandId: null, seriesId: null,
+  attachment: null, pulleys: null, restSeconds: null, brandId: null, seriesId: null,
 };
+
+const REST_OPTIONS = [30, 60, 90, 120, 150, 180];
+const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
 export default function ExerciseEditor() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -187,6 +190,12 @@ export default function ExerciseEditor() {
           </Card>
         </>
       )}
+
+      <SectionTitle>Rest timer</SectionTitle>
+      <ChipRow wrap>
+        <Chip label={`Default (${mmss(profile.restSeconds)})`} active={form.restSeconds == null} onPress={() => set('restSeconds', null)} />
+        {REST_OPTIONS.map((r) => <Chip key={r} label={mmss(r)} active={form.restSeconds === r} onPress={() => set('restSeconds', r)} />)}
+      </ChipRow>
 
       {eq !== 'band' && (
         <>

@@ -10,7 +10,10 @@ import { MetricCard } from '../../components/widgets/MetricCard';
 import { SleepCard } from '../../components/widgets/SleepCard';
 import { WeightCard } from '../../components/widgets/WeightCard';
 import { MEASUREMENTS, METRICS, VITALS } from '../../data/metrics';
-import { formatBodyweight as formatWeight } from '../../domain/units';
+import { formatBodyweight as formatWeight, toDisplay } from '../../domain/units';
+import { LineChart } from '../../components/LineChart';
+import { Segmented } from '../../components/SettingsUI';
+import { useState } from 'react';
 import { listBodyweight } from '../../repo/bodyweight';
 import { colors } from '../../theme/colors';
 
@@ -46,14 +49,58 @@ export default function Health() {
   );
 }
 
+type Range = '1M' | '3M' | '6M' | '1Y' | 'All';
+const RANGE_DAYS: Record<Range, number> = { '1M': 30, '3M': 91, '6M': 182, '1Y': 365, All: 0 };
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={{ flex: 1, gap: 2 }}>
+      <Text style={{ color: colors.textDim, fontSize: 12 }}>{label}</Text>
+      <Text style={{ color: colors.text, fontWeight: '700', fontSize: 14, fontVariant: ['tabular-nums'] }} numberOfLines={1} adjustsFontSizeToFit>{value}</Text>
+    </View>
+  );
+}
+
 function WeightHistory() {
   const db = useSQLiteContext();
   const { profile } = useProfile();
-  const [bw] = useLoad(() => listBodyweight(db, 365), [db]);
+  const [bw] = useLoad(() => listBodyweight(db, 5000), [db]);
+  const [range, setRange] = useState<Range>('3M');
+  const [now] = useState(() => Date.now());
   if (!bw?.length) return null;
   const rows = [...bw].reverse();
+  const toMs = (iso: string) => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d).getTime(); };
+  const cutoff = range === 'All' ? 0 : now - RANGE_DAYS[range] * 86_400_000;
+  const inRange = bw.filter((e) => toMs(e.date) >= cutoff);
+  const first = inRange[0];
+  const last = inRange[inRange.length - 1];
+  const change = first && last && inRange.length > 1 ? last.weightKg - first.weightKg : null;
+  const weeks = first && last ? (toMs(last.date) - toMs(first.date)) / (7 * 86_400_000) : 0;
+  const perWeek = change != null && weeks >= 1 ? change / weeks : null;
+  const signed = (kg: number) => `${kg > 0 ? '+' : kg < 0 ? '−' : '±'}${formatWeight(Math.abs(kg), profile.unit)}`;
   return (
     <>
+      <SectionTitle>Progress</SectionTitle>
+      <Card style={{ gap: 12 }}>
+        <Segmented options={(Object.keys(RANGE_DAYS) as Range[]).map((r) => ({ label: r, value: r }))} value={range} onChange={setRange} />
+        {inRange.length < 2 ? (
+          <Text style={styles.dim}>Log your weight on at least two days in this period to see a graph.</Text>
+        ) : (
+          <LineChart
+            detailed
+            height={200}
+            points={inRange.map((e) => ({ x: toMs(e.date), y: toDisplay(e.weightKg, profile.unit) }))}
+            formatY={(v) => (Math.round(v * 10) / 10).toString()}
+            formatX={(t) => new Date(t).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
+          />
+        )}
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Stat label="Start" value={first ? formatWeight(first.weightKg, profile.unit) : '–'} />
+          <Stat label="Now" value={last ? formatWeight(last.weightKg, profile.unit) : '–'} />
+          <Stat label="Change" value={change != null ? signed(change) : '–'} />
+          <Stat label="Per week" value={perWeek != null ? signed(perWeek) : '–'} />
+        </View>
+      </Card>
       <SectionTitle>History</SectionTitle>
       <Card style={{ gap: 0, paddingVertical: 4 }}>
         {rows.map((e, i) => {

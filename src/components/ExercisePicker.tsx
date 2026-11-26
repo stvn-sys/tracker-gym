@@ -5,7 +5,6 @@ import { EQUIPMENT_LABEL } from '../data/equipment';
 import { MUSCLE_LABEL, type Muscle } from '../data/muscles';
 import { listExercises, type Exercise } from '../repo/exercises';
 import { colors } from '../theme/colors';
-import { usePrefs } from './Prefs';
 import { inputStyle, styles } from './ui';
 
 interface Props {
@@ -22,7 +21,6 @@ export function ExercisePicker({ visible, title, preferMuscle, excludeId, onPick
   const db = useSQLiteContext();
   const [all, setAll] = useState<Exercise[]>([]);
   const [query, setQuery] = useState('');
-  const { prefs } = usePrefs();
 
   useEffect(() => {
     if (visible) listExercises(db).then(setAll);
@@ -33,9 +31,9 @@ export function ExercisePicker({ visible, title, preferMuscle, excludeId, onPick
     const rank = (e: Exercise) =>
       !preferMuscle ? 0 : e.primaryMuscle === preferMuscle ? 0 : e.secondaryMuscles.includes(preferMuscle) ? 1 : 2;
     return all
-      .filter((e) => e.id !== excludeId && prefs.equipment.includes(e.equipment) && (!q || e.name.toLowerCase().includes(q) || MUSCLE_LABEL[e.primaryMuscle].toLowerCase().includes(q)))
+      .filter((e) => e.id !== excludeId && (!q || e.name.toLowerCase().includes(q) || MUSCLE_LABEL[e.primaryMuscle].toLowerCase().includes(q)))
       .sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
-  }, [all, query, preferMuscle, excludeId, prefs.equipment]);
+  }, [all, query, preferMuscle, excludeId]);
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} presentationStyle="pageSheet">

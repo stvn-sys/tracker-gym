@@ -11,7 +11,7 @@ import { usePrefs } from '../../components/Prefs';
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-interface Item { key: string; exerciseId: string; name: string; targetSets: number; targetReps: number }
+interface Item { key: string; exerciseId: string; name: string; targetSets: number; targetReps: number; supersetId: string | null }
 
 export default function RoutineEditor() {
   const { id, group } = useLocalSearchParams<{ id: string; group?: string }>();
@@ -30,7 +30,7 @@ export default function RoutineEditor() {
       if (!r) return;
       setName(r.name);
       setWeekdays(r.weekdays);
-      setItems(r.exercises.map((e) => ({ key: e.id, exerciseId: e.exerciseId, name: e.exerciseName, targetSets: e.targetSets, targetReps: e.targetReps })));
+      setItems(r.exercises.map((e) => ({ key: e.id, exerciseId: e.exerciseId, name: e.exerciseName, targetSets: e.targetSets, targetReps: e.targetReps, supersetId: e.supersetId })));
     });
   }, [db, id, isNew]);
 
@@ -44,9 +44,31 @@ export default function RoutineEditor() {
     return next;
   });
 
+  /** Is exercise i in the same superset as exercise i + 1? */
+  const linked = (i: number) => !!items[i]?.supersetId && items[i].supersetId === items[i + 1]?.supersetId;
+  const toggleLink = (i: number) => setItems((list) => {
+    const next = list.map((x) => ({ ...x }));
+    if (linked(i)) {
+      // Split the superset after i; a member left on its own is no longer a superset.
+      const sid = next[i].supersetId!;
+      const after = newKey();
+      for (let j = i + 1; j < next.length && next[j].supersetId === sid; j++) next[j].supersetId = after;
+    } else {
+      const sid = next[i].supersetId ?? next[i + 1].supersetId ?? newKey();
+      next[i].supersetId = sid;
+      next[i + 1].supersetId = sid;
+    }
+    const counts = new Map<string, number>();
+    for (const x of next) if (x.supersetId) counts.set(x.supersetId, (counts.get(x.supersetId) ?? 0) + 1);
+    for (const x of next) if (x.supersetId && counts.get(x.supersetId) === 1) x.supersetId = null;
+    return next;
+  });
+  const supersetIds = [...new Set(items.map((x) => x.supersetId).filter((x): x is string => !!x))];
+  const letterOf = (sid: string) => String.fromCharCode(65 + Math.max(0, supersetIds.indexOf(sid)));
+
   const save = async () => {
     if (!name.trim()) { showAlert('Give the workout a name'); return; }
-    const input = { groupId: group ?? null, name, weekdays, exercises: items.map(({ exerciseId, targetSets, targetReps }) => ({ exerciseId, targetSets, targetReps })) };
+    const input = { groupId: group ?? null, name, weekdays, exercises: items.map(({ exerciseId, targetSets, targetReps, supersetId }) => ({ exerciseId, targetSets, targetReps, supersetId })) };
     if (isNew) await createRoutine(db, input);
     else await updateRoutine(db, id, input);
     router.back();
@@ -70,7 +92,11 @@ export default function RoutineEditor() {
 
       <SectionTitle>Exercises</SectionTitle>
       {items.map((it, i) => (
-        <Card key={it.key} style={{ gap: 10, padding: 12 }}>
+        <View key={it.key} style={{ gap: 6 }}>
+        <Card style={{ gap: 10, padding: 12, borderLeftWidth: it.supersetId ? 4 : 0, borderLeftColor: colors.accent }}>
+          {it.supersetId && (
+            <Text style={{ color: colors.accent, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 }}>SUPERSET {letterOf(it.supersetId)}</Text>
+          )}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Text style={[styles.text, { flex: 1, fontWeight: '700' }]}>{it.name}</Text>
             <IconBtn label="↑" onPress={() => move(i, -1)} disabled={i === 0} />
@@ -82,6 +108,15 @@ export default function RoutineEditor() {
             <Stepper label="Reps" value={it.targetReps} min={1} onChange={(v) => patch(it.key, { targetReps: v })} />
           </View>
         </Card>
+        {i < items.length - 1 && (
+          <Pressable onPress={() => toggleLink(i)} hitSlop={6} style={{ alignSelf: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999,
+            backgroundColor: linked(i) ? colors.accentDim : 'transparent', borderWidth: 1, borderColor: linked(i) ? colors.accent : colors.border }}>
+            <Text style={{ color: linked(i) ? colors.accent : colors.textDim, fontWeight: '700', fontSize: 12 }}>
+              {linked(i) ? '⛓ Superset · tap to unlink' : '+ Superset with next'}
+            </Text>
+          </Pressable>
+        )}
+        </View>
       ))}
       <Button label="+ Add exercise" variant="ghost" onPress={() => setPicking(true)} />
 
@@ -95,13 +130,15 @@ export default function RoutineEditor() {
         title="Add exercise"
         onClose={() => setPicking(false)}
         onPick={(ex) => {
-          setItems((l) => [...l, { key: `${ex.id}-${Date.now()}`, exerciseId: ex.id, name: ex.name, targetSets: 3, targetReps: 10 }]);
+          setItems((l) => [...l, { key: `${ex.id}-${Date.now()}`, exerciseId: ex.id, name: ex.name, targetSets: 3, targetReps: 10, supersetId: null }]);
           setPicking(false);
         }}
       />
     </ScrollView>
   );
 }
+
+const newKey = () => `ss-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
 function IconBtn({ label, onPress, disabled, danger }: { label: string; onPress: () => void; disabled?: boolean; danger?: boolean }) {
   return (

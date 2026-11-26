@@ -8,7 +8,6 @@ import { EQUIPMENT, EQUIPMENT_LABEL, type Equipment } from '../../data/equipment
 import { MUSCLES, MUSCLE_LABEL, type Muscle } from '../../data/muscles';
 import { listExercises, restoreDefaultExercises, type Exercise } from '../../repo/exercises';
 import { colors } from '../../theme/colors';
-import { usePrefs } from '../Prefs';
 
 type Sort = 'name' | 'muscle' | 'equipment';
 
@@ -19,8 +18,6 @@ export function LibraryView() {
   const [muscle, setMuscle] = useState<Muscle | null>(null);
   const [equipment, setEquipment] = useState<Equipment | null>(null);
   const [sort, setSort] = useState<Sort>('name');
-  const { prefs } = usePrefs();
-  const owned = prefs.equipment;
 
   const reload = useCallback(() => { listExercises(db).then(setItems); }, [db]);
   useFocusEffect(reload);
@@ -30,11 +27,11 @@ export function LibraryView() {
     const list = items.filter((e) =>
       (!q || e.name.toLowerCase().includes(q)) &&
       (!muscle || e.primaryMuscle === muscle || e.secondaryMuscles.includes(muscle)) &&
-      (equipment ? e.equipment === equipment : owned.includes(e.equipment)));
+      (!equipment || e.equipment === equipment));
     const key = (e: Exercise) =>
       sort === 'muscle' ? MUSCLE_LABEL[e.primaryMuscle] : sort === 'equipment' ? EQUIPMENT_LABEL[e.equipment] : '';
     return list.sort((a, b) => key(a).localeCompare(key(b)) || a.name.localeCompare(b.name));
-  }, [items, query, muscle, equipment, sort, owned]);
+  }, [items, query, muscle, equipment, sort]);
 
   const restore = () =>
     showAlert('Restore defaults?', 'Premade exercises are reset and deleted ones come back. Your own exercises and history are kept.', [
@@ -65,7 +62,7 @@ export function LibraryView() {
         </ChipRow>
         <ChipRow>
           <Chip label="All equipment" active={!equipment} onPress={() => setEquipment(null)} />
-          {EQUIPMENT.filter((e) => owned.includes(e)).map((e) => (
+          {EQUIPMENT.map((e) => (
             <Chip key={e} label={EQUIPMENT_LABEL[e]} active={equipment === e} onPress={() => setEquipment(equipment === e ? null : e)} />
           ))}
         </ChipRow>
