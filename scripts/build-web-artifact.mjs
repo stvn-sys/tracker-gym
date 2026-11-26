@@ -27,7 +27,12 @@ const files = [];
   }
 })(src);
 
-const safe = (rel) => rel.replace(/\[|\]/g, '');
+// Hosts may reserve names starting with "_" or reject brackets, so flatten paths:
+// "_expo/static/js/web/__common-x.js" -> "js/common-x.js", "[id]-x.js" -> "id-x.js".
+const safe = (rel) => rel
+  .replace(/^_expo\/static\/js\/web\//, 'js/')
+  .replace(/\[|\]/g, '')
+  .replace(/(^|\/)_+/g, '$1');
 const renames = files.filter((f) => f !== safe(f));
 
 for (const rel of files) {
@@ -38,10 +43,10 @@ for (const rel of files) {
   let code = fs.readFileSync(path.join(src, rel), 'utf8');
   for (const r of renames) code = code.split('/' + r).join('/' + safe(r));
   if (path.basename(rel).startsWith('worker-')) {
-    const workerBase = 'self.location.href.replace(/_expo\\/static\\/js\\/web\\/[^\\/]*$/,"")';
+    const workerBase = 'self.location.href.replace(/js\\/[^\\/]*$/,"")';
     code = code.replace(/"\/assets\//g, `${workerBase}+"assets/`);
   } else {
-    code = code.replace(/"\/(_expo|assets)\//g, '(self.__TG_BASE||"/")+"$1/');
+    code = code.replace(/"\/(js|assets)\//g, '(self.__TG_BASE||"/")+"$1/');
   }
   fs.writeFileSync(dest, code);
 }
