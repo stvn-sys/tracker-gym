@@ -25,8 +25,8 @@ export function useLoad<T>(loader: () => Promise<T>, deps: unknown[]): [T | unde
   return [data, bump];
 }
 
-export function WidgetCard({ title, action, onAction, children }: { title: string; action?: string; onAction?: () => void; children: ReactNode }) {
-  return (
+export function WidgetCard({ title, action, onAction, onPress, children }: { title: string; action?: string; onAction?: () => void; onPress?: () => void; children: ReactNode }) {
+  const card = (
     <Card style={{ gap: 10 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Text style={{ color: colors.textDim, fontWeight: '700', letterSpacing: 0.5, fontSize: 13 }}>{title.toUpperCase()}</Text>
@@ -40,6 +40,7 @@ export function WidgetCard({ title, action, onAction, children }: { title: strin
       {children}
     </Card>
   );
+  return onPress ? <Pressable onPress={onPress}>{card}</Pressable> : card;
 }
 
 export function Bar({ value, color = colors.accent, height = 8 }: { value: number; color?: string; height?: number }) {

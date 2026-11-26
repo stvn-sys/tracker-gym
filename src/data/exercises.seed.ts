@@ -23,6 +23,7 @@ export interface SeedExercise {
   brand?: string;
   series?: string;
   notes?: string;
+  variant?: string | null;
 }
 
 const M = (series: 'Versa' | 'Magnum') => ({ equipment: 'machine' as const, brand: 'Matrix', series });
@@ -82,6 +83,7 @@ export const SEED_EXERCISES: SeedExercise[] = defs.map((d) => ({
   attachment: d.attachment ?? null,
   pulleys: d.pulleys ?? null,
   barType: d.barType ?? null,
+  variant: d.variant ?? (d.equipment === 'bodyweight' ? 'Bodyweight' : null),
 }));
 
 /**

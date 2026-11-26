@@ -102,6 +102,8 @@ export default function WorkoutEditor() {
   const menuEx = menuItem ? exercises.get(menuItem.exerciseId) : undefined;
   const nextItem = menuFor != null ? items[menuFor + 1] : undefined;
   const canLinkNext = !!menuItem && !!nextItem && !(menuItem.supersetId && menuItem.supersetId === nextItem.supersetId);
+  const prevItem = menuFor != null && menuFor > 0 ? items[menuFor - 1] : undefined;
+  const canLinkPrev = !!menuItem && !!prevItem && !(menuItem.supersetId && menuItem.supersetId === prevItem.supersetId);
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingBottom: 48 }]} keyboardShouldPersistTaps="handled">
@@ -164,7 +166,8 @@ export default function WorkoutEditor() {
         <Pressable style={{ flex: 1, backgroundColor: '#000a', justifyContent: 'flex-end' }} onPress={() => setMenuFor(null)}>
           <Pressable style={{ backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 8, paddingBottom: 24 }}>
             <Text style={[styles.dim, { textAlign: 'center', padding: 10 }]}>{menuEx?.name}</Text>
-            {canLinkNext && <MenuRow label="Superset with next exercise" onPress={() => { linkWithNext(menuFor!); setMenuFor(null); }} />}
+            {canLinkPrev && <MenuRow label="Superset with previous" onPress={() => { linkWithNext(menuFor! - 1); setMenuFor(null); }} />}
+            {canLinkNext && <MenuRow label="Superset with next" onPress={() => { linkWithNext(menuFor!); setMenuFor(null); }} />}
             {menuItem?.supersetId && <MenuRow label="Remove from superset" onPress={() => { unlink(menuFor!); setMenuFor(null); }} />}
             <MenuRow label="Edit exercise" onPress={() => { const exId = menuItem!.exerciseId; setMenuFor(null); router.push({ pathname: '/exercise/[id]', params: { id: exId } }); }} />
             <MenuRow label="Remove from workout" danger onPress={() => { const k = menuItem!.key; setItems((l) => tidy(l.filter((x) => x.key !== k))); setMenuFor(null); }} />

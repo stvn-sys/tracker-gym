@@ -232,4 +232,8 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE exercises ADD COLUMN notes TEXT;
   ALTER TABLE workouts ADD COLUMN gym TEXT;
   `,
+  // 8: variant for bodyweight/band exercises (weighted, assisted, ...)
+  `
+  ALTER TABLE exercises ADD COLUMN variant TEXT;
+  `,
 ];

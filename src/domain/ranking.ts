@@ -56,6 +56,25 @@ export function ratioToPercentile(ratio: number, thresholds: number[]): number {
   return p[last] + (99.9 - p[last]) * (1 - Math.exp(-(ratio - thresholds[last]) / span));
 }
 
+/** Inverse of ratioToPercentile: the bodyweight ratio needed for a percentile. */
+export function percentileToRatio(percentile: number, thresholds: number[]): number {
+  const p = LEVEL_PERCENTILES;
+  const pc = Math.max(0, Math.min(99.89, percentile));
+  if (pc <= p[0]) return (pc / p[0]) * thresholds[0];
+  for (let i = 1; i < thresholds.length; i++) {
+    if (pc <= p[i]) return thresholds[i - 1] + ((pc - p[i - 1]) / (p[i] - p[i - 1])) * (thresholds[i] - thresholds[i - 1]);
+  }
+  const last = thresholds.length - 1;
+  const span = thresholds[last] - thresholds[last - 1];
+  return thresholds[last] - span * Math.log(1 - (pc - p[last]) / (99.9 - p[last]));
+}
+
+/** Estimated 1RM (kg of load) needed to reach the start of each tier. */
+export function tierTargets(std: Standard, profile: Profile): { tier: Tier; loadKg: number }[] {
+  const thresholds = std[profile.sex].map((r) => r * ageFactor(profile.age));
+  return TIERS.map((tier, i) => ({ tier, loadKg: percentileToRatio(TIER_START_PERCENTILE[i], thresholds) * profile.bodyweightKg }));
+}
+
 export function percentileToRank(percentile: number): Rank {
   const pct = Math.max(0, Math.min(100, percentile));
   let t = 0;

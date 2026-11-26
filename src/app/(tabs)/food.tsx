@@ -26,7 +26,7 @@ export default function Nutrition() {
         page="nutrition"
         cards={[
           { id: 'summary', title: 'Summary', render: () => <CaloriesCard date={date} title="Summary" /> },
-          { id: 'intake', title: 'Intake', render: () => <NutritionCard date={date} /> },
+          { id: 'intake', title: 'Meals', render: () => <NutritionCard date={date} /> },
           { id: 'water', title: 'Water tracker', render: () => <WaterCard date={date} /> },
           { id: 'recipes', title: 'Recipes', render: () => (
             <View style={{ gap: 10 }}>

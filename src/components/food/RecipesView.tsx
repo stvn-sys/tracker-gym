@@ -9,6 +9,7 @@ import { colors } from '../../theme/colors';
 import { showAlert } from '../Dialog';
 import { Button, Card, Chip, ChipRow, inputStyle, styles } from '../ui';
 import { useLoad } from '../widgets/common';
+import { useKeyboardHeight } from '../useKeyboardHeight';
 
 const macroLine = (m: { calories: number; proteinG: number; fatG: number; carbsG: number }) =>
   `${Math.round(m.calories)} kcal · P${Math.round(m.proteinG)} F${Math.round(m.fatG)} C${Math.round(m.carbsG)}`;
@@ -56,6 +57,7 @@ function LogRecipe({ recipe, date, onClose, onDone }: { recipe: Recipe; date: st
   const db = useSQLiteContext();
   const [meal, setMeal] = useState<Meal>(mealForTime());
   const [servings, setServings] = useState('1');
+  const keyboard = useKeyboardHeight();
   const n = parseFloat(servings.replace(',', '.'));
   const ps = perServing(recipe);
   const valid = Number.isFinite(n) && n > 0;
@@ -73,7 +75,7 @@ function LogRecipe({ recipe, date, onClose, onDone }: { recipe: Recipe; date: st
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={{ flex: 1, backgroundColor: '#000a' }} onPress={onClose} />
-      <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16, gap: 12 }}>
+      <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16, gap: 12, marginBottom: keyboard }}>
         <Text style={[styles.section, { marginTop: 0 }]}>Log {recipe.name}</Text>
         <Text style={styles.dim}>Meal</Text>
         <ChipRow wrap>

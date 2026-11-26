@@ -7,6 +7,7 @@ import { RIR_COLORS } from '../../components/NumPad';
 import { useProfile } from '../../components/ProfileContext';
 import { Button, Card, styles } from '../../components/ui';
 import { formatWeight } from '../../domain/units';
+import { loadMode, type LoadMode } from '../../data/equipment';
 import { bestE1rm, formatWorkoutDuration } from '../../domain/workout';
 import { discardWorkout, getWorkout, type WorkoutDetail } from '../../repo/workouts';
 import { colors } from '../../theme/colors';
@@ -55,7 +56,7 @@ export default function WorkoutDetailScreen() {
             {e.sets.map((s) => (
               <View key={s.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Text style={{ width: 22, color: s.isWarmup ? '#F5B400' : colors.textDim, fontWeight: '700' }}>{s.isWarmup ? 'W' : ++n}</Text>
-                <Text style={styles.text}>{formatWeight(s.weightKg, unit)} × {s.reps ?? '–'}</Text>
+                <Text style={styles.text}>{setLabel(s.weightKg, s.reps, loadMode(e.exercise), unit)}</Text>
                 {s.rir != null && (
                   <Text style={{ color: RIR_COLORS[s.rir], fontSize: 12, fontWeight: '700' }}>RIR {s.rir === 5 ? '5+' : s.rir}</Text>
                 )}
@@ -79,4 +80,11 @@ function Stat({ label, value }: { label: string; value: string }) {
       <Text style={[styles.text, { fontWeight: '800', fontSize: 17 }]}>{value}</Text>
     </Card>
   );
+}
+
+/** "80 kg × 8", "+10 kg × 8", "−20 kg × 8" or "8 reps". */
+function setLabel(kg: number | null, reps: number | null, mode: LoadMode, unit: 'kg' | 'lbs') {
+  if (mode === 'none' || kg == null) return `${reps ?? '–'} reps`;
+  const w = formatWeight(kg, unit);
+  return `${mode === 'assisted' ? '−' : mode === 'added' ? '+' : ''}${w} × ${reps ?? '–'}`;
 }

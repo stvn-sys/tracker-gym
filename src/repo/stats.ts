@@ -6,6 +6,7 @@ import {
   type ExerciseScore, type Rank,
 } from '../domain/ranking';
 import { epley } from '../domain/workout';
+import { loadMode } from '../data/equipment';
 import { mapExercise, type Exercise } from './exercises';
 
 export const RECENT_DAYS = 90;
@@ -31,9 +32,23 @@ interface Row {
 }
 
 /** Load used for e1RM: bodyweight is added for pull-ups/dips etc. */
-function setE1rm(weightKg: number | null, reps: number, bodyweightKg: number, addBodyweight: boolean): number {
+/**
+ * How a set's weight turns into load: external weight, or bodyweight plus/minus
+ * the logged weight (weighted / assisted bodyweight exercises).
+ */
+type LoadKind = 'external' | 'bw+' | 'bw-';
+function loadKind(ex: { equipment: Exercise['equipment']; variant: string | null } | undefined, addBodyweight: boolean): LoadKind {
+  if (!ex) return addBodyweight ? 'bw+' : 'external';
+  const mode = loadMode(ex);
+  if (mode === 'assisted') return 'bw-';
+  if (ex.equipment === 'bodyweight' || addBodyweight) return 'bw+';
+  return 'external';
+}
+
+function setE1rm(weightKg: number | null, reps: number, bodyweightKg: number, kind: LoadKind): number {
   if (reps > MAX_REPS_FOR_E1RM) return 0;
-  const load = addBodyweight ? bodyweightKg + (weightKg ?? 0) : weightKg ?? 0;
+  const w = weightKg ?? 0;
+  const load = kind === 'bw+' ? bodyweightKg + w : kind === 'bw-' ? bodyweightKg - w : w;
   return epley(load, reps);
 }
 
@@ -59,7 +74,7 @@ export async function computeStats(
     const ex = exercises.get(s.ex_id);
     const std = standardFor(ex?.builtinKey);
     if (!ex || !std) continue;
-    const e = setE1rm(s.weight_kg, s.reps, profile.bodyweightKg, !!std.addBodyweight);
+    const e = setE1rm(s.weight_kg, s.reps, profile.bodyweightKg, loadKind(ex, !!std.addBodyweight));
     if (e > (best.get(ex.id) ?? 0)) best.set(ex.id, e);
   }
 
@@ -84,8 +99,9 @@ export async function computeStats(
 
 /** Best e1RM per workout for an exercise, oldest first (for the progress graph). */
 export async function e1rmHistory(db: SQLiteDatabase, exerciseId: string, bodyweightKg: number | null) {
-  const ex = await db.getFirstAsync<{ builtin_key: string | null }>('SELECT builtin_key FROM exercises WHERE id = ?', exerciseId);
-  const addBw = !!standardFor(ex?.builtin_key)?.addBodyweight;
+  const ex = await db.getFirstAsync<{ builtin_key: string | null; equipment: Exercise['equipment']; variant: string | null }>(
+    'SELECT builtin_key, equipment, variant FROM exercises WHERE id = ?', exerciseId);
+  const kind = loadKind(ex ?? undefined, !!standardFor(ex?.builtin_key)?.addBodyweight);
   const rows = await db.getAllAsync<{ weight_kg: number | null; reps: number; started_at: number; workout_id: string }>(
     `SELECT s.weight_kg, s.reps, w.started_at, w.id AS workout_id FROM sets s
      JOIN workout_exercises we ON we.id = s.workout_exercise_id
@@ -97,7 +113,7 @@ export async function e1rmHistory(db: SQLiteDatabase, exerciseId: string, bodywe
   );
   const byWorkout = new Map<string, { t: number; e1rm: number }>();
   for (const r of rows) {
-    const e = setE1rm(r.weight_kg, r.reps, bodyweightKg ?? 0, addBw);
+    const e = setE1rm(r.weight_kg, r.reps, bodyweightKg ?? 0, kind);
     if (e <= 0) continue;
     const cur = byWorkout.get(r.workout_id);
     if (!cur || e > cur.e1rm) byWorkout.set(r.workout_id, { t: r.started_at, e1rm: e });
@@ -119,8 +135,9 @@ export interface SessionStat {
 
 /** One row per finished session of an exercise, oldest first. */
 export async function exerciseSessions(db: SQLiteDatabase, exerciseId: string, bodyweightKg: number | null): Promise<SessionStat[]> {
-  const ex = await db.getFirstAsync<{ builtin_key: string | null }>('SELECT builtin_key FROM exercises WHERE id = ?', exerciseId);
-  const addBw = !!standardFor(ex?.builtin_key)?.addBodyweight;
+  const ex = await db.getFirstAsync<{ builtin_key: string | null; equipment: Exercise['equipment']; variant: string | null }>(
+    'SELECT builtin_key, equipment, variant FROM exercises WHERE id = ?', exerciseId);
+  const kind = loadKind(ex ?? undefined, !!standardFor(ex?.builtin_key)?.addBodyweight);
   const rows = await db.getAllAsync<{ weight_kg: number | null; reps: number; started_at: number; workout_id: string }>(
     `SELECT s.weight_kg, s.reps, w.started_at, w.id AS workout_id FROM sets s
      JOIN workout_exercises we ON we.id = s.workout_exercise_id
@@ -130,7 +147,7 @@ export async function exerciseSessions(db: SQLiteDatabase, exerciseId: string, b
      ORDER BY w.started_at`,
     exerciseId,
   );
-  return groupSessions(rows, (w, r) => setE1rm(w, r, bodyweightKg ?? 0, addBw));
+  return groupSessions(rows, (w, r) => setE1rm(w, r, bodyweightKg ?? 0, kind));
 }
 
 function groupSessions(
@@ -164,7 +181,7 @@ export async function allE1rmSeries(db: SQLiteDatabase): Promise<Map<string, num
   for (const r of rows) perExercise.set(r.exercise_id, [...(perExercise.get(r.exercise_id) ?? []), r]);
   const out = new Map<string, number[]>();
   for (const [id, list] of perExercise) {
-    out.set(id, groupSessions(list, (w, r) => setE1rm(w, r, 0, false)).map((s) => s.e1rm).filter((v) => v > 0));
+    out.set(id, groupSessions(list, (w, r) => setE1rm(w, r, 0, 'external')).map((s) => s.e1rm).filter((v) => v > 0));
   }
   return out;
 }

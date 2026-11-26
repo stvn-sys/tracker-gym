@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { colors } from '../theme/colors';
 import { Button, inputStyle, styles } from './ui';
+import { useKeyboardHeight } from './useKeyboardHeight';
 
 export interface Field {
   key: string;
@@ -29,13 +30,14 @@ export function EntryModal(props: Props) {
 }
 
 function EntryForm({ title, fields, onSave, onClose, children }: Props) {
+  const keyboard = useKeyboardHeight();
   const [values, setValues] = useState<Record<string, string>>(
     () => Object.fromEntries(fields.map((f) => [f.key, f.initial ?? ''])),
   );
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={{ flex: 1, backgroundColor: '#000a' }} onPress={onClose} />
-      <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16, gap: 12, maxHeight: '85%' }}>
+      <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 16, gap: 12, maxHeight: '85%', marginBottom: keyboard }}>
         <Text style={[styles.section, { marginTop: 0 }]}>{title}</Text>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 10 }}>
           {children}

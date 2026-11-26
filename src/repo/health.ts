@@ -28,3 +28,8 @@ export async function metricOn(db: SQLiteDatabase, type: MetricType, date: strin
   );
   return r?.value ?? null;
 }
+
+export async function deleteMetric(db: SQLiteDatabase, type: MetricType, date: string) {
+  const t = now();
+  await db.runAsync('UPDATE health_metrics SET deleted_at = ?, updated_at = ? WHERE type = ? AND date = ?', t, t, type, date);
+}

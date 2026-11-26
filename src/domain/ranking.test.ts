@@ -57,3 +57,11 @@ test('standards are increasing and some premade exercises are ranked', () => {
     for (const r of [s.male, s.female]) for (let i = 1; i < 5; i++) assert.ok(r[i] > r[i - 1]);
   }
 });
+
+test('percentileToRatio inverts ratioToPercentile', async () => {
+  const { percentileToRatio } = await import('./ranking.ts');
+  const t = [0.5, 0.75, 1.25, 1.75, 2.0];
+  for (const r of [0.2, 0.6, 1.0, 1.9, 2.4]) {
+    assert.ok(Math.abs(percentileToRatio(ratioToPercentile(r, t), t) - r) < 1e-6, String(r));
+  }
+});

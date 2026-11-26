@@ -6,6 +6,7 @@ import { MUSCLE_LABEL, type Muscle } from '../data/muscles';
 import { listBrands, type Brand } from '../repo/brands';
 import { getExercise, listExercises, type Exercise } from '../repo/exercises';
 import { ExerciseForm } from './ExerciseForm';
+import { useKeyboardHeight } from './useKeyboardHeight';
 import { colors } from '../theme/colors';
 import { Chip, ChipRow, inputStyle, styles } from './ui';
 
@@ -27,6 +28,7 @@ export function ExercisePicker({ visible, title, preferMuscle, excludeId, onPick
   const [query, setQuery] = useState('');
   const [equipment, setEquipment] = useState<Equipment | null>(null);
   const [creating, setCreating] = useState(false);
+  const keyboard = useKeyboardHeight();
 
   useEffect(() => {
     if (!visible) return;
@@ -48,7 +50,7 @@ export function ExercisePicker({ visible, title, preferMuscle, excludeId, onPick
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={close} presentationStyle="pageSheet">
-      <View style={[styles.screen, { paddingTop: 16 }]}>
+      <View style={[styles.screen, { paddingTop: 16, paddingBottom: keyboard }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, gap: 12 }}>
           <Text style={[styles.section, { flex: 1, marginTop: 0 }]}>{creating ? 'New exercise' : title}</Text>
           <Pressable onPress={creating ? () => setCreating(false) : close} hitSlop={12}>

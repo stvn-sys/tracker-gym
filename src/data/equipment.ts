@@ -48,6 +48,29 @@ export const BAR_TYPES = [
 ] as const;
 export const supportsBarType = (e: Equipment) => e === 'barbell';
 
+/** Variants for bodyweight and band exercises; they decide how a set's weight is entered. */
+export const VARIANTS: Partial<Record<Equipment, string[]>> = {
+  bodyweight: ['Bodyweight', 'Weighted', 'Assisted (machine)', 'Assisted (band)'],
+  band: ['Band resistance', 'Assisted (band)'],
+};
+export const supportsVariant = (e: Equipment) => !!VARIANTS[e];
+
+/**
+ * How the weight of a set is entered and shown:
+ *  - weight:   normal external load (kg)
+ *  - none:     reps only (plain bodyweight, band resistance)
+ *  - added:    bodyweight plus extra weight, shown as +kg
+ *  - assisted: bodyweight minus assistance, shown as −kg
+ */
+export type LoadMode = 'weight' | 'none' | 'added' | 'assisted';
+export function loadMode(e: { equipment: Equipment; variant?: string | null }): LoadMode {
+  const v = e.variant ?? '';
+  if (v.startsWith('Assisted')) return 'assisted';
+  if (e.equipment === 'bodyweight') return v === 'Weighted' ? 'added' : 'none';
+  if (e.equipment === 'band') return 'none';
+  return 'weight';
+}
+
 export const CABLE_ATTACHMENTS = [
   'D-handle', 'Bar', 'EZ bar', 'Rope', 'V-handle', 'Lat bar', 'Wide row bar',
   'MAG grip', 'Cuff', 'Ankle strap', 'No attachment',
@@ -80,11 +103,12 @@ export function stepWeight(weightKg: number, incrementKg: number, direction: 1 |
  * "Bar · Trap bar", "Cable · 2 pulleys · Rope", "Machine · Matrix Versa".
  */
 export function equipmentDetail(
-  e: { equipment: Equipment; barType?: string | null; pulleys?: number | null; attachment?: string | null; brandId?: string | null; seriesId?: string | null },
+  e: { equipment: Equipment; variant?: string | null; barType?: string | null; pulleys?: number | null; attachment?: string | null; brandId?: string | null; seriesId?: string | null },
   brands: { id: string; name: string; series: { id: string; name: string }[] }[] = [],
 ): string {
   const parts: string[] = [EQUIPMENT_LABEL[e.equipment]];
   if (e.equipment === 'barbell' && e.barType) parts.push(e.barType);
+  if (supportsVariant(e.equipment) && e.variant && e.variant !== VARIANTS[e.equipment]![0]) parts.push(e.variant);
   if (e.equipment === 'cable') {
     if (e.pulleys) parts.push(`${e.pulleys} ${e.pulleys === 1 ? 'pulley' : 'pulleys'}`);
     if (e.attachment) parts.push(e.attachment);

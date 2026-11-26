@@ -5,7 +5,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useProfile } from './ProfileContext';
 import { Button, Card, Chip, ChipRow, inputStyle, SectionTitle, styles } from './ui';
 import {
-  BAR_TYPES, DEFAULT_ADDON_PLATES_KG, PULLEY_OPTIONS, supportsBarType, DEFAULT_INCREMENT_KG, EQUIPMENT, EQUIPMENT_LABEL,
+  BAR_TYPES, DEFAULT_ADDON_PLATES_KG, VARIANTS, supportsVariant, PULLEY_OPTIONS, supportsBarType, DEFAULT_INCREMENT_KG, EQUIPMENT, EQUIPMENT_LABEL,
   supportsAddonPlates, supportsAttachment, supportsBrand, supportsLaterality, type Equipment,
 } from '../data/equipment';
 import { MUSCLE_LABEL, MUSCLE_REGIONS, type Muscle } from '../data/muscles';
@@ -22,7 +22,7 @@ const ADDON_OPTIONS_KG = [0.5, 1, 1.25, 2.5];
 const blank: ExerciseInput = {
   name: '', primaryMuscle: 'chest', secondaryMuscles: [], equipment: 'dumbbell',
   incrementKg: DEFAULT_INCREMENT_KG.dumbbell, addonPlatesKg: [], laterality: 'bilateral',
-  attachment: null, pulleys: null, restSeconds: null, barType: null, notes: null, brandId: null, seriesId: null,
+  attachment: null, pulleys: null, restSeconds: null, barType: null, notes: null, variant: null, brandId: null, seriesId: null,
 };
 
 /** Applies an equipment choice and its defaults, keeping options that still apply. */
@@ -36,6 +36,7 @@ function withEquipment(f: ExerciseInput, eq: Equipment): ExerciseInput {
     attachment: supportsAttachment(eq) ? f.attachment : null,
     pulleys: supportsAttachment(eq) ? (f.pulleys ?? 1) : null,
     barType: supportsBarType(eq) ? (f.barType ?? 'Olympic barbell') : null,
+    variant: supportsVariant(eq) ? (f.variant && VARIANTS[eq]!.includes(f.variant) ? f.variant : VARIANTS[eq]![0]) : null,
     brandId: supportsBrand(eq) ? f.brandId : null,
     seriesId: supportsBrand(eq) ? f.seriesId : null,
   };
@@ -155,6 +156,19 @@ export function ExerciseForm({ id, initialName = '', initialEquipment = null, on
             <Chip label="Bilateral" active={form.laterality === 'bilateral'} onPress={() => set('laterality', 'bilateral')} />
             <Chip label="Unilateral" active={form.laterality === 'unilateral'} onPress={() => set('laterality', 'unilateral')} />
           </ChipRow>
+        </>
+      )}
+
+      {supportsVariant(eq) && (
+        <>
+          <SectionTitle>Type</SectionTitle>
+          <ChipRow wrap>
+            {VARIANTS[eq]!.map((v) => <Chip key={v} label={v} active={form.variant === v} onPress={() => set('variant', v)} />)}
+          </ChipRow>
+          <Text style={styles.dim}>
+            {form.variant?.startsWith('Assisted') ? 'You log the assistance as −kg; less assistance means more progress.'
+              : form.variant === 'Weighted' ? 'You log the extra weight as +kg.' : 'Reps only, no weight.'}
+          </Text>
         </>
       )}
 

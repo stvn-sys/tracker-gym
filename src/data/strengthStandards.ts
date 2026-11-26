@@ -59,6 +59,9 @@ const DEADLIFT: Standard = { male: [1.0, 1.5, 2.0, 2.5, 3.0], female: [0.5, 1.0,
 const OHP: Standard = { male: [0.35, 0.55, 0.8, 1.05, 1.35], female: [0.2, 0.35, 0.5, 0.75, 1.0] };
 const ROW: Standard = { male: [0.5, 0.75, 1.0, 1.5, 1.75], female: [0.25, 0.4, 0.65, 0.9, 1.2] };
 
+/** estimated: male thresholds, female = male × factor. */
+const est = (male: Ratios, femaleFactor: number): Standard => ({ male, female: scale(male, femaleFactor) });
+
 /** derived: a fraction of a main lift's thresholds. */
 const derive = (base: Standard, f: number, extra: Partial<Standard> = {}): Standard => ({
   male: scale(base.male, f), female: scale(base.female, f), ...extra,
@@ -114,4 +117,32 @@ export const STRENGTH_STANDARDS: Record<string, Standard> = {
   seated_leg_curl: { male: [0.4, 0.6, 0.9, 1.2, 1.5], female: [0.3, 0.45, 0.65, 0.9, 1.15] },
   standing_calf_raise: { male: [0.75, 1.25, 1.75, 2.5, 3.25], female: [0.5, 0.85, 1.25, 1.75, 2.3] },
   hip_adduction: { male: [0.5, 0.8, 1.15, 1.55, 2.0], female: [0.4, 0.65, 0.95, 1.3, 1.65] },
+
+  /*
+   * ESTIMATED for the Workout_Plan exercises (added Nov 2026). Strength Level could not
+   * be reached from the build environment and Liftoff does not publish its tables, so
+   * these are educated guesses: each is scaled from a similar lift above or from
+   * typical gym loads for that movement. Female values are male × 0.6 (upper body)
+   * or × 0.75 (lower body / hips). Unilateral cable/dumbbell entries are per side.
+   * Adjust freely once you have better numbers.
+   */
+  mid_fly: est([0.2, 0.35, 0.55, 0.8, 1.05], 0.6),                 // ~ cable crossover, both handles
+  upper_fly: est([0.17, 0.3, 0.47, 0.68, 0.9], 0.6),               // ~ 85% of mid fly
+  db_pullover: est([0.2, 0.35, 0.5, 0.7, 0.95], 0.6),              // one dumbbell
+  low_row: est([0.25, 0.4, 0.6, 0.85, 1.1], 0.6),                  // ~ half of seated cable row, per side
+  sagittal_pullover: est([0.1, 0.18, 0.28, 0.4, 0.55], 0.6),       // per side
+  cable_sldl: est([0.3, 0.5, 0.75, 1.05, 1.4], 0.75),              // ~ RDL scaled for a single cable stack
+  cable_lateral_raise: est([0.03, 0.06, 0.1, 0.15, 0.21], 0.6),    // per side
+  external_rotation: est([0.02, 0.04, 0.07, 0.1, 0.14], 0.6),      // per side
+  kelso_shrug: est([0.5, 0.8, 1.15, 1.6, 2.0], 0.6),               // ~ machine row / shrug
+  reverse_fly: est([0.1, 0.18, 0.3, 0.45, 0.6], 0.6),              // per side
+  carter_extension: est([0.06, 0.1, 0.16, 0.24, 0.32], 0.6),       // per side
+  jm_press: est([0.35, 0.55, 0.8, 1.05, 1.35], 0.6),               // ~ 65% of close-grip bench
+  bayesian_curl: est([0.08, 0.14, 0.22, 0.32, 0.42], 0.6),         // per handle
+  reverse_curl: est([0.15, 0.28, 0.42, 0.6, 0.8], 0.6),            // ~ 70% of a straight curl
+  preacher_curl: est([0.15, 0.3, 0.45, 0.65, 0.85], 0.6),          // ~ EZ curl, slightly less
+  hip_external_rotation: est([0.15, 0.25, 0.4, 0.55, 0.75], 0.75),
+  hip_internal_rotation: est([0.15, 0.25, 0.4, 0.55, 0.75], 0.75),
+  straight_knee_calf_press: est([0.75, 1.25, 1.75, 2.5, 3.25], 0.75), // ~ standing calf raise
+  bent_knee_calf_raise: est([0.4, 0.7, 1.05, 1.45, 1.9], 0.75),   // ~ seated calf raise
 };

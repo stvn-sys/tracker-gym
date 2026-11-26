@@ -20,6 +20,7 @@ export function LibraryView() {
   const [query, setQuery] = useState('');
   const [muscle, setMuscle] = useState<Muscle | null>(null);
   const [equipment, setEquipment] = useState<Equipment | null>(null);
+  const [sub, setSub] = useState<string | null>(null);
   const [sort, setSort] = useState<Sort>('name');
 
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -27,16 +28,23 @@ export function LibraryView() {
   const reload = useCallback(() => { listExercises(db).then(setItems); listBrands(db).then(setBrands); allE1rmSeries(db).then(setSeries); }, [db]);
   useFocusEffect(reload);
 
+  /** Detail parts after the equipment name, e.g. ['2 pulleys', 'Rope']. */
+  const subParts = useCallback((e: Exercise) => equipmentDetail(e, brands).split(' · ').slice(1), [brands]);
+
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = items.filter((e) =>
       (!q || e.name.toLowerCase().includes(q)) &&
       (!muscle || e.primaryMuscle === muscle || e.secondaryMuscles.includes(muscle)) &&
-      (!equipment || e.equipment === equipment));
+      (!equipment || e.equipment === equipment) &&
+      (!sub || subParts(e).includes(sub)));
     const key = (e: Exercise) =>
       sort === 'muscle' ? MUSCLE_LABEL[e.primaryMuscle] : sort === 'equipment' ? EQUIPMENT_LABEL[e.equipment] : '';
     return list.sort((a, b) => key(a).localeCompare(key(b)) || a.name.localeCompare(b.name));
-  }, [items, query, muscle, equipment, sort]);
+  }, [items, query, muscle, equipment, sort, sub, subParts]);
+
+  // Sub-types present for the chosen equipment (e.g. '2 pulleys', 'Matrix Versa', 'EZ bar').
+  const subs = equipment ? [...new Set(items.filter((e) => e.equipment === equipment).flatMap(subParts))].sort() : [];
 
   const restore = () =>
     showAlert('Restore defaults?', 'Premade exercises are reset and deleted ones come back. Your own exercises and history are kept.', [
@@ -66,11 +74,17 @@ export function LibraryView() {
           ))}
         </ChipRow>
         <ChipRow>
-          <Chip label="All equipment" active={!equipment} onPress={() => setEquipment(null)} />
+          <Chip label="All equipment" active={!equipment} onPress={() => { setEquipment(null); setSub(null); }} />
           {EQUIPMENT.map((e) => (
-            <Chip key={e} label={EQUIPMENT_LABEL[e]} active={equipment === e} onPress={() => setEquipment(equipment === e ? null : e)} />
+            <Chip key={e} label={EQUIPMENT_LABEL[e]} active={equipment === e} onPress={() => { setEquipment(equipment === e ? null : e); setSub(null); }} />
           ))}
         </ChipRow>
+        {subs.length > 0 && (
+          <ChipRow>
+            <Chip label={`All ${EQUIPMENT_LABEL[equipment!].toLowerCase()}`} active={!sub} onPress={() => setSub(null)} />
+            {subs.map((x) => <Chip key={x} label={x} active={sub === x} onPress={() => setSub(sub === x ? null : x)} />)}
+          </ChipRow>
+        )}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Text style={styles.dim}>Sort</Text>
           {(['name', 'muscle', 'equipment'] as Sort[]).map((s) => (

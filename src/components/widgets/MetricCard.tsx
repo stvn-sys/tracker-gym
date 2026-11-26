@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View } from 'react-native';
+import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { formatMetric, METRICS, type MetricType } from '../../data/metrics';
 import { localDate } from '../../domain/meals';
@@ -34,7 +35,7 @@ export function MetricCard({ type }: { type: MetricType }) {
   const todayVal = isSteps ? (latest?.date === today ? latest.value : 0) : latest?.value;
 
   return (
-    <WidgetCard title={m.label} action="+ Log" onAction={() => setOpen(true)}>
+    <WidgetCard title={m.label} action="+ Log" onAction={() => setOpen(true)} onPress={() => router.push({ pathname: '/metric/[type]', params: { type } })}>
       <BigValue
         value={fmt(todayVal)}
         unit={unit}
