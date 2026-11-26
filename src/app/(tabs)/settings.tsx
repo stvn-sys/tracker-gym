@@ -1,20 +1,21 @@
 import { useEffect, useState } from 'react';
-import { Stack } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useDataVersion } from '../components/DataVersion';
-import { DEFAULT_GOALS, getGoals, setGoals, type Goals } from '../repo/kv';
+import { useDataVersion } from '../../components/DataVersion';
+import { useSubTab } from '../../components/SubTabs';
+import { DEFAULT_GOALS, getGoals, setGoals, type Goals } from '../../repo/kv';
 import { ScrollView, Text, TextInput, View } from 'react-native';
-import { useProfile } from '../components/ProfileContext';
-import { Card, Chip, SectionTitle, styles } from '../components/ui';
-import { colors } from '../theme/colors';
+import { useProfile } from '../../components/ProfileContext';
+import { Card, Chip, SectionTitle, styles } from '../../components/ui';
+import { colors } from '../../theme/colors';
 
 export default function Settings() {
   const { profile, update } = useProfile();
+  const sub = useSubTab('settings');
   const [age, setAge] = useState(profile.age?.toString() ?? '');
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingBottom: 48 }]}>
-      <Stack.Screen options={{ title: 'Settings' }} />
+      {sub === 'Profile' && (<>
       <SectionTitle>Units</SectionTitle>
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <Chip label="kg" active={profile.unit === 'kg'} onPress={() => update('unit', 'kg')} />
@@ -47,8 +48,11 @@ export default function Settings() {
           <Chip key={s} label={`${s / 60} min`} active={profile.restSeconds === s} onPress={() => update('restSeconds', s)} />
         ))}
       </View>
-      <SectionTitle>Daily goals</SectionTitle>
-      <GoalsEditor />
+      </>)}
+      {sub === 'Goals' && (<>
+        <SectionTitle>Daily goals</SectionTitle>
+        <GoalsEditor />
+      </>)}
     </ScrollView>
   );
 }

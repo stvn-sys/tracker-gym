@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { CardList } from '../../components/CardList';
+import { useSubTab } from '../../components/SubTabs';
 import { styles } from '../../components/ui';
 import { CaloriesCard } from '../../components/widgets/CaloriesCard';
 import { NutritionCard } from '../../components/widgets/NutritionCard';
@@ -9,6 +10,7 @@ import { localDate } from '../../domain/meals';
 import { colors } from '../../theme/colors';
 
 export default function Food() {
+  const sub = useSubTab('food');
   const [offset, setOffset] = useState(0);
   const [base] = useState(() => new Date());
   const date = localDate(base, offset);
@@ -22,14 +24,16 @@ export default function Food() {
         <Pressable onPress={() => setOffset(0)}><Text style={[styles.text, { fontWeight: '800', fontSize: 18 }]}>{label}</Text></Pressable>
         <Arrow label="›" onPress={() => setOffset((o) => o + 1)} />
       </View>
-      <CardList
+      {sub === 'Nutrition' && <><CaloriesCard date={date} title="Summary" /><NutritionCard date={date} /></>}
+      {sub === 'Water' && <WaterCard date={date} />}
+      {sub === 'Overview' && <CardList
         page="food"
         cards={[
           { id: 'summary', title: 'Summary', render: () => <CaloriesCard date={date} title="Summary" /> },
           { id: 'nutrition', title: 'Nutrition', render: () => <NutritionCard date={date} /> },
           { id: 'water', title: 'Water tracker', render: () => <WaterCard date={date} /> },
         ]}
-      />
+      />}
     </ScrollView>
   );
 }

@@ -1,5 +1,6 @@
-import { Pressable, Text, type ColorValue } from 'react-native';
-import { router, Tabs } from 'expo-router';
+import { Text, View, type ColorValue } from 'react-native';
+import { BottomTabBar, Tabs, type BottomTabBarProps } from 'expo-router/js-tabs';
+import { SubTabProvider, SubTabRow } from '../../components/SubTabs';
 import { colors } from '../../theme/colors';
 
 function icon(glyph: string) {
@@ -7,32 +8,38 @@ function icon(glyph: string) {
   return TabIcon;
 }
 
-function SettingsButton() {
+/** Sub-tabs of the selected tab, stacked on top of the normal tab bar. */
+function TabBarWithSubTabs(props: BottomTabBarProps) {
+  const route = props.state.routes[props.state.index].name;
   return (
-    <Pressable onPress={() => router.push('/settings')} hitSlop={12} style={{ marginRight: 16 }}>
-      <Text style={{ color: colors.textDim, fontSize: 22 }}>⚙</Text>
-    </Pressable>
+    <View>
+      <SubTabRow route={route} />
+      <BottomTabBar {...props} />
+    </View>
   );
 }
 
 export default function TabsLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        headerStyle: { backgroundColor: colors.bg },
-        headerTintColor: colors.text,
-        headerTitleStyle: { fontWeight: '800', fontSize: 22 },
-        headerRight: SettingsButton,
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.textDim,
-        sceneStyle: { backgroundColor: colors.bg },
-      }}
-    >
-      <Tabs.Screen name="index" options={{ title: 'Today', tabBarIcon: icon('☀') }} />
-      <Tabs.Screen name="fitness" options={{ title: 'Fitness', tabBarIcon: icon('🏋') }} />
-      <Tabs.Screen name="food" options={{ title: 'Food', tabBarIcon: icon('🍽') }} />
-      <Tabs.Screen name="health" options={{ title: 'Health', tabBarIcon: icon('♥') }} />
-    </Tabs>
+    <SubTabProvider>
+      <Tabs
+        tabBar={TabBarWithSubTabs}
+        screenOptions={{
+          headerStyle: { backgroundColor: colors.bg },
+          headerTintColor: colors.text,
+          headerTitleStyle: { fontWeight: '800', fontSize: 22 },
+          tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
+          tabBarActiveTintColor: colors.accent,
+          tabBarInactiveTintColor: colors.textDim,
+          sceneStyle: { backgroundColor: colors.bg },
+        }}
+      >
+        <Tabs.Screen name="fitness" options={{ title: 'Fitness', tabBarIcon: icon('🏋') }} />
+        <Tabs.Screen name="food" options={{ title: 'Food', tabBarIcon: icon('🍽') }} />
+        <Tabs.Screen name="index" options={{ title: 'Today', tabBarIcon: icon('☀') }} />
+        <Tabs.Screen name="health" options={{ title: 'Health', tabBarIcon: icon('♥') }} />
+        <Tabs.Screen name="settings" options={{ title: 'Settings', tabBarIcon: icon('⚙') }} />
+      </Tabs>
+    </SubTabProvider>
   );
 }

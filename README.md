@@ -16,7 +16,7 @@ npm run typecheck && npm test
 - **Health** – steps, weight, sleep, vitals (VO₂ max, breathing rate, SpO₂, RHR, HRV, skin temp)
 
 Every card page has **Edit layout** at the bottom to reorder or hide cards.
-Goals (calories, macros, water, steps, sleep) are in Settings (⚙).
+Each tab has a row of sub-tabs above the tab bar. Goals are under Settings › Goals.
 
 ## Layout
 - `src/app/` – screens (expo-router)
