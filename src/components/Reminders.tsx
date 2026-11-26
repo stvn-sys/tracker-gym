@@ -35,7 +35,9 @@ export function ReminderSync() {
     if (Platform.OS === 'web') return;
     let cancelled = false;
     (async () => {
-      await Notifications.cancelAllScheduledNotificationsAsync();
+      for (const n of await Notifications.getAllScheduledNotificationsAsync()) {
+        if (!n.identifier.startsWith('rest-')) await Notifications.cancelScheduledNotificationAsync(n.identifier);
+      }
       if (!remindWorkout.on && !remindWeigh.on && !remindWater.on) return;
       if (!(await ensureNotificationPermission()) || cancelled) return;
       if (Platform.OS === 'android') {

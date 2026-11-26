@@ -10,7 +10,7 @@ export type Equipment = (typeof EQUIPMENT)[number];
 
 export const EQUIPMENT_LABEL: Record<Equipment, string> = {
   barbell: 'Bar', dumbbell: 'Dumbbell', cable: 'Cable',
-  machine: 'Machine', smith: 'Smith machine', plate: 'Weight plate',
+  machine: 'Machine', smith: 'Smith', plate: 'Weight plate',
   bodyweight: 'Bodyweight', band: 'Band', other: 'Other',
 };
 
@@ -35,7 +35,9 @@ export const supportsLaterality = (e: Equipment) =>
 export const supportsBrand = (e: Equipment) => isMachine(e) || e === 'smith';
 /** Number of pulleys used on a cable exercise. */
 export const PULLEY_OPTIONS = [1, 2, 3, 4] as const;
-export const supportsAttachment = isCable;
+/** Pulleys only apply to cables. Attachments are per equipment type (Settings). */
+export const supportsPulleys = isCable;
+export const supportsAttachment = supportsPulleys;
 /** Add-on plates only make sense on a selectorized stack. */
 export const supportsAddonPlates = (e: Equipment) => isCable(e) || isMachine(e);
 
@@ -106,17 +108,22 @@ export function equipmentDetail(
   e: { equipment: Equipment; variant?: string | null; barType?: string | null; pulleys?: number | null; attachment?: string | null; brandId?: string | null; seriesId?: string | null },
   brands: { id: string; name: string; series: { id: string; name: string }[] }[] = [],
 ): string {
-  const parts: string[] = [EQUIPMENT_LABEL[e.equipment]];
-  if (e.equipment === 'barbell' && e.barType) parts.push(e.barType);
-  if (supportsVariant(e.equipment) && e.variant && e.variant !== VARIANTS[e.equipment]![0]) parts.push(e.variant);
-  if (e.equipment === 'cable') {
-    if (e.pulleys) parts.push(`${e.pulleys} ${e.pulleys === 1 ? 'pulley' : 'pulleys'}`);
-    if (e.attachment) parts.push(e.attachment);
-  }
+  const l = equipmentLines(e, brands);
+  return [l.equipment, l.sub, l.attachment].filter(Boolean).join(' · ');
+}
+
+type EqLike = { equipment: Equipment; variant?: string | null; barType?: string | null; pulleys?: number | null; attachment?: string | null; brandId?: string | null; seriesId?: string | null };
+
+/** Equipment split in three lines: type, sub-type ("2 pulleys", "Olympic barbell", "Matrix Versa"), attachment. */
+export function equipmentLines(e: EqLike, brands: { id: string; name: string; series: { id: string; name: string }[] }[] = []) {
+  const sub: string[] = [];
+  if (e.equipment === 'barbell' && e.barType) sub.push(e.barType);
+  if (supportsVariant(e.equipment) && e.variant && e.variant !== VARIANTS[e.equipment]![0]) sub.push(e.variant);
+  if (e.equipment === 'cable' && e.pulleys) sub.push(`${e.pulleys} ${e.pulleys === 1 ? 'pulley' : 'pulleys'}`);
   if (e.brandId) {
     const b = brands.find((x) => x.id === e.brandId);
     const s = b?.series.find((x) => x.id === e.seriesId);
-    if (b) parts.push([b.name, s?.name].filter(Boolean).join(' '));
+    if (b) sub.push([b.name, s?.name].filter(Boolean).join(' '));
   }
-  return parts.join(' · ');
+  return { equipment: EQUIPMENT_LABEL[e.equipment], sub: sub.join(' · ') || null, attachment: e.attachment || null };
 }

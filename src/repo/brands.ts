@@ -31,3 +31,12 @@ export async function createSeries(db: SQLiteDatabase, brandId: string, name: st
   );
   return id;
 }
+
+export const renameBrand = (db: SQLiteDatabase, id: string, name: string) =>
+  db.runAsync('UPDATE machine_brands SET name = ?, updated_at = ? WHERE id = ?', name.trim(), now(), id);
+export const deleteBrand = (db: SQLiteDatabase, id: string) =>
+  db.runAsync('UPDATE machine_brands SET deleted_at = ?, updated_at = ? WHERE id = ?', now(), now(), id);
+export const renameSeries = (db: SQLiteDatabase, id: string, name: string) =>
+  db.runAsync('UPDATE machine_series SET name = ?, updated_at = ? WHERE id = ?', name.trim(), now(), id);
+export const deleteSeries = (db: SQLiteDatabase, id: string) =>
+  db.runAsync('UPDATE machine_series SET deleted_at = ?, updated_at = ? WHERE id = ?', now(), now(), id);

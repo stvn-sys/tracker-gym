@@ -9,14 +9,15 @@ import { showAlert } from '../../components/Dialog';
 import { usePrefs } from '../../components/Prefs';
 import { useProfile } from '../../components/ProfileContext';
 import { ensureNotificationPermission } from '../../components/Reminders';
-import { ChoiceRow, Group, Step, TimeRow, ToggleRow } from '../../components/SettingsUI';
+import { ChoiceRow, Group, NavRow, Step, TimeRow, ToggleRow } from '../../components/SettingsUI';
 import { Button, inputStyle, styles } from '../../components/ui';
 import { playBeep, buzz } from '../../components/alerts';
 import { APP_VERSION } from '../../data/appInfo';
 import {
   connectHealthConnect, grantedHealthTypes, HC_TYPES, healthConnectStatus, openHealthConnectSettings, syncHealthConnect, type HcStatus,
 } from '../../repo/healthConnect';
-import { CABLE_ATTACHMENTS } from '../../data/equipment';
+import { BAR_TYPES, CABLE_ATTACHMENTS, EQUIPMENT, EQUIPMENT_LABEL, VARIANTS, supportsBrand, supportsPulleys, PULLEY_OPTIONS, type Equipment } from '../../data/equipment';
+import { createBrand, createSeries, deleteBrand, deleteSeries, listBrands, renameBrand, renameSeries, type Brand } from '../../repo/brands';
 import { exportAll, importAll, resetAll } from '../../repo/backup';
 import { DEFAULT_GOALS, getGoals, setGoals, type Goals } from '../../repo/kv';
 import { latestBodyweightKg, logBodyweight } from '../../repo/bodyweight';
@@ -24,7 +25,7 @@ import { formatBodyweight, fromDisplay } from '../../domain/units';
 import { ACCENTS, colors, type Accent } from '../../theme/colors';
 
 const TITLES: Record<string, string> = {
-  profile: 'Profile', workout: 'Workout', gyms: 'Gyms', attachments: 'Attachments', health: 'Health Connect', alerts: 'Timer alerts', reminders: 'Reminders', schedule: 'Plan & schedule',
+  profile: 'Profile', workout: 'Workout', gyms: 'Gyms', attachments: 'Equipment & attachments', health: 'Health Connect', alerts: 'Timer alerts', reminders: 'Reminders', schedule: 'Plan & schedule',
   units: 'Units & language', goals: 'Nutrition & goals', look: 'Look & Home', data: 'Data & backup', about: 'About',
 };
 
@@ -32,7 +33,8 @@ export default function PrefSection() {
   const { section } = useLocalSearchParams<{ section: string }>();
   return (
     <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { gap: 22, paddingBottom: 48 }]} keyboardShouldPersistTaps="handled">
-      <Stack.Screen options={{ title: TITLES[section] ?? 'Settings' }} />
+      <Stack.Screen options={{ title: TITLES[section] ?? (section?.startsWith('eq-') ? EQUIPMENT_LABEL[section.slice(3) as Equipment] : 'Settings') }} />
+      {section?.startsWith('eq-') && <EquipmentTypeSection eq={section.slice(3) as Equipment} />}
       {section === 'profile' && <ProfileSection />}
       {section === 'workout' && <WorkoutSection />}
       {section === 'gyms' && <GymsSection />}
@@ -257,14 +259,101 @@ function GymsSection() {
 }
 
 function AttachmentsSection() {
-  const { prefs, setPrefs } = usePrefs();
+  const { prefs } = usePrefs();
+  const sub = (e: Equipment) => {
+    const n = (prefs.attachmentsByEq[e] ?? []).length;
+    const parts = [e === 'barbell' && `${prefs.barTypes.length} bars`, supportsBrand(e) && 'Brands', n ? `${n} attachments` : 'No attachments'];
+    return parts.filter(Boolean).join(' · ');
+  };
   return (
     <>
-      <ListEditor items={prefs.attachments} onChange={(attachments) => setPrefs({ attachments })} placeholder="Add an attachment" />
+      <Group footer="Pick an equipment type to edit its sub-types and attachments. Types without attachments don't show an attachment field when you create an exercise.">
+        {EQUIPMENT.map((e) => (
+          <NavRow key={e} label={EQUIPMENT_LABEL[e]} value={sub(e)} onPress={() => router.push({ pathname: '/pref/[section]', params: { section: `eq-${e}` } })} />
+        ))}
+      </Group>
+    </>
+  );
+}
+
+function EquipmentTypeSection({ eq }: { eq: Equipment }) {
+  const { prefs, setPrefs } = usePrefs();
+  const list = prefs.attachmentsByEq[eq] ?? [];
+  const setList = (next: string[]) => setPrefs({ attachmentsByEq: { ...prefs.attachmentsByEq, [eq]: next } });
+  return (
+    <>
+      {eq === 'barbell' && (
+        <>
+          <Text style={styles.section}>Bar types</Text>
+          <ListEditor items={prefs.barTypes} onChange={(barTypes) => setPrefs({ barTypes })} placeholder="Add a bar type" />
+          <Button label="Restore default bar types" variant="ghost" onPress={() => setPrefs({ barTypes: [...BAR_TYPES] })} />
+        </>
+      )}
+      {supportsBrand(eq) && <BrandsEditor />}
+      {supportsPulleys(eq) && <Text style={styles.dim}>Pulleys: {PULLEY_OPTIONS.join(', ')} (chosen per exercise).</Text>}
+      {VARIANTS[eq] && <Text style={styles.dim}>Types: {VARIANTS[eq]!.join(', ')}. These decide how weight is logged, so they are fixed.</Text>}
+      <Text style={styles.section}>Attachments</Text>
+      <ListEditor items={list} onChange={setList} placeholder="Add an attachment" />
       <Text style={[styles.dim, { marginHorizontal: 16 }]}>
-        These are the choices for cable exercises. Tap a name to rename it. Exercises that already use a removed attachment keep it.
+        {list.length ? 'Tap a name to rename it. Exercises that already use a removed attachment keep it.' : `No attachments: ${EQUIPMENT_LABEL[eq]} exercises won't show an attachment field.`}
       </Text>
-      <Button label="Restore default attachments" variant="ghost" onPress={() => setPrefs({ attachments: [...CABLE_ATTACHMENTS] })} />
+      {eq === 'cable' && <Button label="Restore default cable attachments" variant="ghost" onPress={() => setList([...CABLE_ATTACHMENTS])} />}
+    </>
+  );
+}
+
+/** Machine brands and their series (shared by Machine and Smith). */
+function BrandsEditor() {
+  const db = useSQLiteContext();
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [open, setOpen] = useState<string | null>(null);
+  const [adding, setAdding] = useState('');
+  const [addingSeries, setAddingSeries] = useState('');
+  const reload = () => listBrands(db).then(setBrands);
+  useEffect(() => { listBrands(db).then(setBrands); }, [db]);
+  const row = { flexDirection: 'row' as const, alignItems: 'center' as const, paddingHorizontal: 12, paddingVertical: 6, gap: 8 };
+  const inp = { flex: 1, minWidth: 0, color: colors.text, fontSize: 17, paddingVertical: 8 };
+  const x = (onPress: () => void) => (
+    <Pressable onPress={onPress} hitSlop={8} style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
+      <Text style={{ color: colors.danger, fontWeight: '800' }}>✕</Text>
+    </Pressable>
+  );
+  const confirmDelete = (name: string, run: () => Promise<unknown>) => showAlert(`Delete ${name}?`, 'Exercises that use it keep working but lose this label.', [
+    { text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: async () => { await run(); reload(); } },
+  ]);
+  return (
+    <>
+      <Text style={styles.section}>Brands & series</Text>
+      <Group footer="Shared by Machine and Smith. Tap ▸ to edit a brand's series.">
+        {brands.map((b) => (
+          <View key={b.id}>
+            <View style={row}>
+              <Pressable onPress={() => setOpen(open === b.id ? null : b.id)} hitSlop={8}><Text style={{ color: colors.textDim, fontSize: 16, width: 18 }}>{open === b.id ? '▾' : '▸'}</Text></Pressable>
+              <CommitInput initial={b.name} style={inp} onCommit={async (t) => { if (t.trim()) { await renameBrand(db, b.id, t); reload(); } }} />
+              <Text style={styles.dim}>{b.series.length}</Text>
+              {x(() => confirmDelete(b.name, () => deleteBrand(db, b.id)))}
+            </View>
+            {open === b.id && (
+              <View style={{ paddingLeft: 28 }}>
+                {b.series.map((s) => (
+                  <View key={s.id} style={row}>
+                    <CommitInput initial={s.name} style={inp} onCommit={async (t) => { if (t.trim()) { await renameSeries(db, s.id, t); reload(); } }} />
+                    {x(() => confirmDelete(s.name, () => deleteSeries(db, s.id)))}
+                  </View>
+                ))}
+                <View style={row}>
+                  <TextInput value={addingSeries} onChangeText={setAddingSeries} placeholder={`Add a ${b.name} series`} placeholderTextColor={colors.textDim} style={inp}
+                    onSubmitEditing={async () => { if (addingSeries.trim()) { await createSeries(db, b.id, addingSeries); setAddingSeries(''); reload(); } }} />
+                </View>
+              </View>
+            )}
+          </View>
+        ))}
+        <View style={row}>
+          <TextInput value={adding} onChangeText={setAdding} placeholder="Add a brand" placeholderTextColor={colors.textDim} style={inp}
+            onSubmitEditing={async () => { if (adding.trim()) { await createBrand(db, adding); setAdding(''); reload(); } }} />
+        </View>
+      </Group>
     </>
   );
 }

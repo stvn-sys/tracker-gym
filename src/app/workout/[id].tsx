@@ -7,13 +7,15 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { restAlert } from '../../components/alerts';
 import { showAlert } from '../../components/Dialog';
 import { ExercisePicker } from '../../components/ExercisePicker';
+import { clearRest, showRest } from '../../components/restNotify';
 import { NumPad, RIR_COLORS } from '../../components/NumPad';
 import { usePrefs } from '../../components/Prefs';
 import { useProfile } from '../../components/ProfileContext';
 import { SwipeRow } from '../../components/SwipeRow';
 import { useKeyboardHeight } from '../../components/useKeyboardHeight';
 import { Button, inputStyle, styles } from '../../components/ui';
-import { equipmentDetail, loadMode, type LoadMode } from '../../data/equipment';
+import { equipmentLines, loadMode, type LoadMode } from '../../data/equipment';
+import { barWeightKg, PLATES_KG, PLATES_LBS, platesPerSide } from '../../domain/plates';
 import { formatWeight, fromDisplay, toDisplay } from '../../domain/units';
 import { formatDuration } from '../../domain/workout';
 import { mixHex } from '../../domain/volume';
@@ -91,6 +93,8 @@ export default function ActiveWorkout() {
     if (restLeft === 0 && !buzzed.current) {
       buzzed.current = true;
       restAlert('done', opts);
+      clearRest(); // in the app: the in-app alert is enough
+
     }
   }, [rest, restLeft, prefs.vibrate, prefs.sound, prefs.warn10]);
 
@@ -152,7 +156,14 @@ export default function ActiveWorkout() {
   const startRest = (seconds: number) => {
     buzzed.current = false;
     warned.current = false;
-    setRest({ endsAt: nowTs() + seconds * 1000, total: seconds });
+    const endsAt = nowTs() + seconds * 1000;
+    setRest({ endsAt, total: seconds });
+    showRest(endsAt, w?.exercises.find((e) => e.sets.some((s) => !s.completedAt && !s.isWarmup))?.exercise.name ?? 'next set', { sound: prefs.sound, vibrate: prefs.vibrate });
+  };
+  const changeRest = (r: { endsAt: number; total: number } | null) => {
+    setRest(r);
+    if (r && r.endsAt > nowTs()) showRest(r.endsAt, 'next set', { sound: prefs.sound, vibrate: prefs.vibrate });
+    else clearRest();
   };
 
   /** Checks off a set. In a superset, rest only starts after the last exercise of the round. */
@@ -196,9 +207,10 @@ export default function ActiveWorkout() {
 
   const finish = () => {
     const done = w.exercises.some((e) => e.sets.some((s) => s.completedAt));
-    const discard = { text: 'Discard', style: 'destructive' as const, onPress: async () => { await discardWorkout(db, w.id); router.back(); } };
+    const discard = { text: 'Discard', style: 'destructive' as const, onPress: async () => { clearRest(); await discardWorkout(db, w.id); router.back(); } };
     const save = async (updateRoutine: boolean) => {
       if (updateRoutine) await updateRoutineFromWorkout(db, w.id);
+      clearRest();
       await finishWorkout(db, w.id);
       router.replace({ pathname: '/history/[id]', params: { id: w.id } });
     };
@@ -224,6 +236,18 @@ export default function ActiveWorkout() {
       ]
     : [];
 
+  const plateText = (() => {
+    if (!selWe || sel?.field !== 'weight' || selWe.exercise.equipment !== 'barbell' || selectedSet?.weightKg == null) return null;
+    const r2 = (n: number) => Math.round(n * 100) / 100;
+    const bar = r2(toDisplay(barWeightKg(selWe.exercise.barType), unit));
+    const total = r2(toDisplay(selectedSet.weightKg, unit));
+    if (bar === 0) return null;
+    const r = platesPerSide(total, bar, unit === 'kg' ? PLATES_KG : PLATES_LBS);
+    if (!r) return `Below the empty bar (${bar} ${unit})`;
+    const side = r.plates.length ? r.plates.join(' + ') : 'no plates';
+    return `Per side: ${side}${r.rest ? ` (+${r.rest} ${unit} left over)` : ''} · bar ${bar} ${unit}`;
+  })();
+
   const title = [w.name, w.gym, formatDuration(nowMs - w.startedAt)].filter(Boolean).join(' · ');
   const isLastPage = pageIdx >= pages.length - 1;
 
@@ -244,14 +268,14 @@ export default function ActiveWorkout() {
       />
 
       {rest && (
-        <Pressable onPress={() => setRest(null)} style={{ backgroundColor: colors.surfaceAlt }}>
+        <Pressable onPress={() => changeRest(null)} style={{ backgroundColor: colors.surfaceAlt }}>
           <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${(restLeft / 1000 / rest.total) * 100}%`, backgroundColor: restLeft ? colors.accentDim : colors.success + '55' }} />
           <View style={{ flexDirection: 'row', alignItems: 'center', padding: 10, gap: 12 }}>
             <Text style={{ color: colors.text, fontWeight: '800', fontSize: 18, flex: 1 }}>
               {restLeft ? `Rest ${formatDuration(restLeft)}` : 'Rest done — go!'}
             </Text>
-            <Pressable onPress={() => setRest({ ...rest, endsAt: rest.endsAt - 15000 })} hitSlop={8}><Text style={styles.dim}>−15s</Text></Pressable>
-            <Pressable onPress={() => setRest({ ...rest, endsAt: rest.endsAt + 15000, total: rest.total + 15 })} hitSlop={8}><Text style={styles.dim}>+15s</Text></Pressable>
+            <Pressable onPress={() => changeRest({ ...rest, endsAt: rest.endsAt - 15000 })} hitSlop={8}><Text style={styles.dim}>−15s</Text></Pressable>
+            <Pressable onPress={() => changeRest({ ...rest, endsAt: rest.endsAt + 15000, total: rest.total + 15 })} hitSlop={8}><Text style={styles.dim}>+15s</Text></Pressable>
             <Text style={{ color: colors.accent }}>Skip</Text>
           </View>
         </Pressable>
@@ -301,7 +325,10 @@ export default function ActiveWorkout() {
                 key={we.id}
                 we={we}
                 unit={unit}
-                meta={[equipmentDetail(we.exercise, brands), we.exercise.laterality === 'unilateral' ? 'Unilateral' : null].filter(Boolean).join(' · ')}
+                meta={(() => {
+                  const l = equipmentLines(we.exercise, brands);
+                  return [[l.equipment, we.exercise.laterality === 'unilateral' ? 'Unilateral' : null].filter(Boolean).join(' · '), l.sub, l.attachment].filter((x): x is string => !!x);
+                })()}
                 sel={sel}
                 onSelect={select}
                 onToggle={(s) => toggleComplete(s, we)}
@@ -345,6 +372,11 @@ export default function ActiveWorkout() {
         </ScrollView>
       )}
 
+      {plateText && (
+        <View style={{ backgroundColor: colors.surface, paddingHorizontal: 16, paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.surfaceAlt }}>
+          <Text style={{ color: colors.text, fontWeight: '700' }}>🏋 {plateText}</Text>
+        </View>
+      )}
       {sel && selectedSet && (
         <NumPad field={sel.field} rir={selectedSet.rir} onKey={onKey} onRir={onRir} onDone={onDone} steps={steps} onStep={onStep} />
       )}
@@ -401,7 +433,7 @@ function weightText(kg: number | null, mode: LoadMode, unit: 'kg' | 'lbs', withU
 }
 
 function ExerciseBlock({ we, unit, meta, sel, onSelect, onToggle, onDelete, actions, onAddSet }: {
-  we: WorkoutExercise; unit: 'kg' | 'lbs'; meta: string;
+  we: WorkoutExercise; unit: 'kg' | 'lbs'; meta: string[];
   sel: { setId: string; field: Field } | null;
   onSelect: (s: WorkoutSet, f: Field) => void;
   onToggle: (s: WorkoutSet) => void;
@@ -416,7 +448,7 @@ function ExerciseBlock({ we, unit, meta, sel, onSelect, onToggle, onDelete, acti
   return (
     <View>
       <Text style={{ color: colors.text, fontSize: 22, fontWeight: '800' }}>{we.exercise.name}</Text>
-      <Text style={styles.dim}>{meta}</Text>
+      {meta.map((m, i) => <Text key={i} style={[styles.dim, i === 0 && { color: colors.text, fontWeight: '600' }]}>{m}</Text>)}
       <Text style={[styles.dim, { marginTop: 2 }]}>Set {Math.min(doneCount + 1, working.length)} of {working.length}</Text>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 12 }}>

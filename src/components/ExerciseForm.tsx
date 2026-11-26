@@ -5,8 +5,8 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useProfile } from './ProfileContext';
 import { Button, Card, Chip, ChipRow, inputStyle, SectionTitle, styles } from './ui';
 import {
-  BAR_TYPES, DEFAULT_ADDON_PLATES_KG, VARIANTS, supportsVariant, PULLEY_OPTIONS, supportsBarType, DEFAULT_INCREMENT_KG, EQUIPMENT, EQUIPMENT_LABEL,
-  supportsAddonPlates, supportsAttachment, supportsBrand, supportsLaterality, type Equipment,
+  DEFAULT_ADDON_PLATES_KG, VARIANTS, supportsVariant, PULLEY_OPTIONS, supportsBarType, DEFAULT_INCREMENT_KG, EQUIPMENT, EQUIPMENT_LABEL,
+  supportsAddonPlates, supportsPulleys, supportsBrand, supportsLaterality, type Equipment,
 } from '../data/equipment';
 import { MUSCLE_LABEL, MUSCLE_REGIONS, type Muscle } from '../data/muscles';
 import { usePrefs } from './Prefs';
@@ -33,8 +33,8 @@ function withEquipment(f: ExerciseInput, eq: Equipment): ExerciseInput {
     incrementKg: DEFAULT_INCREMENT_KG[eq],
     addonPlatesKg: DEFAULT_ADDON_PLATES_KG[eq] ?? [],
     laterality: supportsLaterality(eq) ? (f.laterality ?? 'bilateral') : null,
-    attachment: supportsAttachment(eq) ? f.attachment : null,
-    pulleys: supportsAttachment(eq) ? (f.pulleys ?? 1) : null,
+    attachment: f.equipment === eq ? f.attachment : null,
+    pulleys: supportsPulleys(eq) ? (f.pulleys ?? 1) : null,
     barType: supportsBarType(eq) ? (f.barType ?? 'Olympic barbell') : null,
     variant: supportsVariant(eq) ? (f.variant && VARIANTS[eq]!.includes(f.variant) ? f.variant : VARIANTS[eq]![0]) : null,
     brandId: supportsBrand(eq) ? f.brandId : null,
@@ -137,6 +137,8 @@ export function ExerciseForm({ id, initialName = '', initialEquipment = null, on
 
   const brand = brands.find((b) => b.id === form.brandId);
   const eq = form.equipment;
+  const eqAttachments = prefs.attachmentsByEq[eq] ?? [];
+  const attachments = eqAttachments.length ? [...new Set([...eqAttachments, ...(form.attachment ? [form.attachment] : [])])] : [];
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingBottom: 48 }]} keyboardShouldPersistTaps="handled">
@@ -176,28 +178,30 @@ export function ExerciseForm({ id, initialName = '', initialEquipment = null, on
         <>
           <SectionTitle>Bar</SectionTitle>
           <ChipRow wrap>
-            {BAR_TYPES.map((b) => <Chip key={b} label={b} active={form.barType === b} onPress={() => set('barType', b)} />)}
+            {[...new Set([...prefs.barTypes, ...(form.barType ? [form.barType] : [])])].map((b) => <Chip key={b} label={b} active={form.barType === b} onPress={() => set('barType', b)} />)}
           </ChipRow>
         </>
       )}
 
-      {supportsAttachment(eq) && (
+      {supportsPulleys(eq) && (
         <>
-          <SectionTitle>Cable</SectionTitle>
-          <Card style={{ gap: 10 }}>
-            <Text style={styles.dim}>Pulleys</Text>
-            <ChipRow wrap>
-              {PULLEY_OPTIONS.map((n) => (
-                <Chip key={n} label={String(n)} active={form.pulleys === n} onPress={() => set('pulleys', n)} />
-              ))}
-            </ChipRow>
-            <Text style={styles.dim}>Attachment</Text>
-            <ChipRow wrap>
-              {[...new Set([...prefs.attachments, ...(form.attachment ? [form.attachment] : [])])].map((a) => (
-                <Chip key={a} label={a} active={form.attachment === a} onPress={() => set('attachment', form.attachment === a ? null : a)} />
-              ))}
-            </ChipRow>
-          </Card>
+          <SectionTitle>Pulleys</SectionTitle>
+          <ChipRow wrap>
+            {PULLEY_OPTIONS.map((n) => (
+              <Chip key={n} label={String(n)} active={form.pulleys === n} onPress={() => set('pulleys', n)} />
+            ))}
+          </ChipRow>
+        </>
+      )}
+
+      {attachments.length > 0 && (
+        <>
+          <SectionTitle>Attachment</SectionTitle>
+          <ChipRow wrap>
+            {attachments.map((a) => (
+              <Chip key={a} label={a} active={form.attachment === a} onPress={() => set('attachment', form.attachment === a ? null : a)} />
+            ))}
+          </ChipRow>
         </>
       )}
 

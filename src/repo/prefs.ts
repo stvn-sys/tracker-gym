@@ -1,5 +1,5 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
-import { CABLE_ATTACHMENTS, EQUIPMENT, type Equipment } from '../data/equipment';
+import { BAR_TYPES, CABLE_ATTACHMENTS, EQUIPMENT, type Equipment } from '../data/equipment';
 import type { Accent, ThemeName } from '../theme/colors';
 import { getJSON, setJSON } from './kv';
 
@@ -21,8 +21,12 @@ export interface Prefs {
   lengthUnit: 'cm' | 'in';
   // Equipment you have access to (no longer shown in Settings)
   equipment: Equipment[];
-  // Cable attachments to choose from (editable in Settings)
-  attachments: string[];
+  /** @deprecated old cable-only list; migrated into attachmentsByEq.cable */
+  attachments?: string[];
+  // Attachments per equipment type (Settings › Equipment). None = no attachment field.
+  attachmentsByEq: Partial<Record<Equipment, string[]>>;
+  // Bar types for the Bar equipment (editable)
+  barTypes: string[];
   // Gym locations (editable in Settings); asked for when starting a workout
   gyms: string[];
   // Android Health Connect sync
@@ -43,7 +47,8 @@ export const DEFAULT_PREFS: Prefs = {
   schedule: 'weekdays', weekStart: 1,
   lengthUnit: 'cm',
   equipment: [...EQUIPMENT],
-  attachments: [...CABLE_ATTACHMENTS],
+  attachmentsByEq: { cable: [...CABLE_ATTACHMENTS] },
+  barTypes: [...BAR_TYPES],
   gyms: [],
   healthConnect: { enabled: false, lastSync: null },
   theme: 'dark', accent: 'blue',
@@ -53,7 +58,11 @@ export const DEFAULT_PREFS: Prefs = {
 };
 
 export async function loadPrefs(db: SQLiteDatabase): Promise<Prefs> {
-  return { ...DEFAULT_PREFS, ...(await getJSON<Partial<Prefs>>(db, 'prefs', {})) };
+  const stored = await getJSON<Partial<Prefs>>(db, 'prefs', {});
+  const p = { ...DEFAULT_PREFS, ...stored };
+  if (!stored.attachmentsByEq && stored.attachments) p.attachmentsByEq = { cable: stored.attachments };
+  delete p.attachments;
+  return p;
 }
 
 export const savePrefs = (db: SQLiteDatabase, p: Prefs) => setJSON(db, 'prefs', p);
