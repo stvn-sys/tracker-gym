@@ -14,7 +14,7 @@ const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
 interface Item { key: string; exerciseId: string; name: string; targetSets: number; targetReps: number }
 
 export default function RoutineEditor() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, group } = useLocalSearchParams<{ id: string; group?: string }>();
   const isNew = id === 'new';
   const db = useSQLiteContext();
   const [name, setName] = useState('');
@@ -43,8 +43,8 @@ export default function RoutineEditor() {
   });
 
   const save = async () => {
-    if (!name.trim()) { showAlert('Give the routine a name'); return; }
-    const input = { name, weekdays, exercises: items.map(({ exerciseId, targetSets, targetReps }) => ({ exerciseId, targetSets, targetReps })) };
+    if (!name.trim()) { showAlert('Give the workout a name'); return; }
+    const input = { groupId: group ?? null, name, weekdays, exercises: items.map(({ exerciseId, targetSets, targetReps }) => ({ exerciseId, targetSets, targetReps })) };
     if (isNew) await createRoutine(db, input);
     else await updateRoutine(db, id, input);
     router.back();
@@ -57,8 +57,8 @@ export default function RoutineEditor() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingBottom: 48 }]} keyboardShouldPersistTaps="handled">
-      <Stack.Screen options={{ title: isNew ? 'New routine' : 'Edit routine' }} />
-      <TextInput value={name} onChangeText={setName} placeholder="Routine name" placeholderTextColor={colors.textDim}
+      <Stack.Screen options={{ title: isNew ? 'New workout' : 'Edit workout' }} />
+      <TextInput value={name} onChangeText={setName} placeholder="Workout name, e.g. Push" placeholderTextColor={colors.textDim}
         style={[inputStyle, { fontSize: 18, fontWeight: '700' }]} />
 
       <SectionTitle>Days</SectionTitle>
@@ -84,8 +84,8 @@ export default function RoutineEditor() {
       <Button label="+ Add exercise" variant="ghost" onPress={() => setPicking(true)} />
 
       <View style={{ gap: 10, marginTop: 16 }}>
-        <Button label={isNew ? 'Create routine' : 'Save'} onPress={save} />
-        {!isNew && <Button label="Delete routine" variant="danger" onPress={remove} />}
+        <Button label={isNew ? 'Create workout' : 'Save'} onPress={save} />
+        {!isNew && <Button label="Delete workout" variant="danger" onPress={remove} />}
       </View>
 
       <ExercisePicker

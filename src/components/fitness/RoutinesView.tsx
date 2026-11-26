@@ -1,58 +1,80 @@
 import { useCallback, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { listRoutines, reorderRoutines, type Routine } from '../../repo/routines';
+import { createGroup, listGroups, reorderGroups, type RoutineGroup } from '../../repo/routines';
 import { colors } from '../../theme/colors';
-import { Card, styles } from '../ui';
-import { DAYS, startOrResume, WodCard } from '../widgets/WodCard';
+import { Card, inputStyle, styles } from '../ui';
+import { DAYS, WodCard } from '../widgets/WodCard';
+import { RoutineBody } from './RoutineMuscles';
 
-/** All routines with every exercise listed; start, edit, reorder. */
+/** Routines (groups of workouts). Tap one to see its muscles, volume and workouts. */
 export function RoutinesView() {
   const db = useSQLiteContext();
-  const [routines, setRoutines] = useState<Routine[]>([]);
-  useFocusEffect(useCallback(() => { listRoutines(db).then(setRoutines); }, [db]));
+  const [groups, setGroups] = useState<RoutineGroup[]>([]);
+  const [newName, setNewName] = useState('');
+  const reload = useCallback(() => { listGroups(db).then(setGroups); }, [db]);
+  useFocusEffect(reload);
 
   const move = async (i: number, dir: -1 | 1) => {
     const j = i + dir;
-    if (j < 0 || j >= routines.length) return;
-    const next = [...routines];
+    if (j < 0 || j >= groups.length) return;
+    const next = [...groups];
     [next[i], next[j]] = [next[j], next[i]];
-    setRoutines(next);
-    await reorderRoutines(db, next.map((r) => r.id));
+    setGroups(next);
+    await reorderGroups(db, next.map((g) => g.id));
+  };
+
+  const add = async () => {
+    if (!newName.trim()) return;
+    const id = await createGroup(db, newName);
+    setNewName('');
+    router.push({ pathname: '/program/[id]', params: { id } });
   };
 
   return (
     <View style={{ gap: 12 }}>
       <WodCard />
-      <Pressable onPress={() => router.push('/routine/new')}
-        style={{ borderRadius: 14, borderWidth: 1, borderColor: colors.accent, borderStyle: 'dashed', paddingVertical: 14, alignItems: 'center' }}>
-        <Text style={{ color: colors.accent, fontWeight: '800' }}>+ New routine</Text>
-      </Pressable>
-      {routines.map((r, i) => (
-        <Card key={r.id} style={{ gap: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.text, { fontWeight: '800', fontSize: 18 }]}>{r.name}</Text>
-              <Text style={{ color: colors.accent, fontSize: 13 }}>{r.weekdays.map((d) => DAYS[d]).join(' + ') || 'No days assigned'}</Text>
+      {groups.map((g, i) => (
+        <Pressable key={g.id} onPress={() => router.push({ pathname: '/program/[id]', params: { id: g.id } })}>
+          <Card style={{ gap: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.text, { fontWeight: '800', fontSize: 19 }]}>{g.name}</Text>
+                <Text style={styles.dim}>{g.workouts.length} {g.workouts.length === 1 ? 'workout' : 'workouts'}</Text>
+              </View>
+              {g.isActive && (
+                <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: colors.success + '26' }}>
+                  <Text style={{ color: colors.success, fontWeight: '800', fontSize: 12 }}>ACTIVE</Text>
+                </View>
+              )}
+              <Small label="▲" disabled={i === 0} onPress={() => move(i, -1)} />
+              <Small label="▼" disabled={i === groups.length - 1} onPress={() => move(i, 1)} />
             </View>
-            <Small label="▲" disabled={i === 0} onPress={() => move(i, -1)} />
-            <Small label="▼" disabled={i === routines.length - 1} onPress={() => move(i, 1)} />
-            <Small label="Edit" onPress={() => router.push({ pathname: '/routine/[id]', params: { id: r.id } })} />
-          </View>
-          {r.exercises.map((e, n) => (
-            <View key={e.id} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 2 }}>
-              <Text style={styles.text}><Text style={styles.dim}>{n + 1}. </Text>{e.exerciseName}</Text>
-              <Text style={styles.dim}>{e.targetSets} × {e.targetReps}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View style={{ width: 150 }}>
+                <RoutineBody workouts={g.workouts} height={150} />
+              </View>
+              <View style={{ flex: 1, gap: 6 }}>
+                {g.workouts.map((w) => (
+                  <View key={w.id}>
+                    <Text style={[styles.text, { fontWeight: '700' }]} numberOfLines={1}>{w.name}</Text>
+                    <Text style={{ color: colors.accent, fontSize: 12 }}>{w.weekdays.map((d) => DAYS[d]).join(' + ') || 'No days'}</Text>
+                  </View>
+                ))}
+                {g.workouts.length === 0 && <Text style={styles.dim}>No workouts yet</Text>}
+              </View>
             </View>
-          ))}
-          {r.exercises.length === 0 && <Text style={styles.dim}>No exercises yet — tap Edit.</Text>}
-          <Pressable onPress={() => startOrResume(db, r.id)}
-            style={{ marginTop: 4, borderRadius: 12, paddingVertical: 10, alignItems: 'center', backgroundColor: colors.accentDim }}>
-            <Text style={{ color: colors.accent, fontWeight: '800' }}>Start {r.name}</Text>
-          </Pressable>
-        </Card>
+          </Card>
+        </Pressable>
       ))}
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        <TextInput value={newName} onChangeText={setNewName} onSubmitEditing={add} placeholder="New routine name, e.g. PPL"
+          placeholderTextColor={colors.textDim} style={[inputStyle, { flex: 1, minWidth: 0 }]} />
+        <Pressable onPress={add} style={{ paddingHorizontal: 16, borderRadius: 12, backgroundColor: colors.accent, justifyContent: 'center' }}>
+          <Text style={{ color: '#06121F', fontWeight: '800' }}>+ Routine</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }

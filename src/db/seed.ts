@@ -24,8 +24,8 @@ export async function seedIfEmpty(db: SQLiteDatabase) {
     for (const [i, r] of SEED_ROUTINES.entries()) {
       const rid = newId();
       await db.runAsync(
-        'INSERT INTO routines (id, name, position, weekdays, updated_at) VALUES (?, ?, ?, ?, ?)',
-        rid, r.name, i, JSON.stringify(r.weekdays), t,
+        'INSERT INTO routines (id, name, position, weekdays, group_id, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+        rid, r.name, i, JSON.stringify(r.weekdays), 'default-group', t,
       );
       for (const [j, [key, sets, reps]] of r.exercises.entries()) {
         await db.runAsync(

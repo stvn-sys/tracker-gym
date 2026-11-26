@@ -192,4 +192,25 @@ export const MIGRATIONS: string[] = [
   );
   CREATE INDEX idx_photos_date ON progress_photos(date);
   `,
+  // 4: one "machine" type; trap bar/landmine -> barbell, kettlebell -> dumbbell;
+  //    routines become "workouts" grouped into routine groups (programs)
+  `
+  UPDATE exercises SET equipment = 'machine' WHERE equipment IN ('machine_pin', 'machine_plate');
+  UPDATE exercises SET equipment = 'barbell' WHERE equipment IN ('trap_bar', 'landmine');
+  UPDATE exercises SET equipment = 'dumbbell' WHERE equipment = 'kettlebell';
+  UPDATE exercises SET name = 'Dumbbell Swing' WHERE builtin_key = 'kb_swing' AND name = 'Kettlebell Swing';
+
+  CREATE TABLE routine_groups (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    is_active INTEGER NOT NULL DEFAULT 0,
+    updated_at INTEGER NOT NULL,
+    deleted_at INTEGER
+  );
+  ALTER TABLE routines ADD COLUMN group_id TEXT;
+  INSERT INTO routine_groups (id, name, position, is_active, updated_at)
+    VALUES ('default-group', 'My Routine', 0, 1, CAST(strftime('%s','now') AS INTEGER) * 1000);
+  UPDATE routines SET group_id = 'default-group';
+  `,
 ];

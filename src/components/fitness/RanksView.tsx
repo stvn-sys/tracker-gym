@@ -51,7 +51,7 @@ export function RanksView() {
   if (!stats) return <View style={styles.screen} />;
 
   const muscleRank = (m: Muscle): Rank | null => (stats.muscles[m] == null ? null : percentileToRank(stats.muscles[m]!));
-  const colorFor = (m: Muscle) => { const r = muscleRank(m); return r ? TIER_COLORS[r.tier] : UNRANKED_COLOR; };
+  const colorFor = (m: Muscle) => { const r = muscleRank(m); return r ? TIER_COLORS[r.tier] : null; };
 
   const ranked = MUSCLES.filter((m) => stats.muscles[m] != null).map((m) => ({ m, rank: muscleRank(m)! }));
   const strongest = [...ranked].sort((a, b) => b.rank.percentile - a.rank.percentile)[0];

@@ -2,7 +2,7 @@ import { Pressable, Text, View } from 'react-native';
 import { showAlert } from '../Dialog';
 import { router } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { listRoutines, routineForWeekday } from '../../repo/routines';
+import { activeWorkouts, routineForWeekday } from '../../repo/routines';
 import { getActiveWorkout, startWorkout } from '../../repo/workouts';
 import { colors } from '../../theme/colors';
 import { styles } from '../ui';
@@ -28,7 +28,7 @@ export function WodCard() {
   const db = useSQLiteContext();
   const today = new Date().getDay();
   const [data] = useLoad(async () => ({
-    wod: routineForWeekday(await listRoutines(db), today),
+    wod: routineForWeekday(await activeWorkouts(db), today),
     active: await getActiveWorkout(db),
   }), [db, today]);
   const wod = data?.wod;

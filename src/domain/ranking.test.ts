@@ -21,10 +21,10 @@ test('ratio → percentile hits level anchors and stays monotonic', () => {
 });
 
 test('percentile → tier and sub-level', () => {
-  assert.equal(percentileToRank(0).label, 'Iron I');
-  assert.equal(percentileToRank(9.9).label, 'Iron V');
-  assert.equal(percentileToRank(50).tier, 'Gold');
-  assert.equal(percentileToRank(99.9).tier, 'Legend');
+  assert.equal(percentileToRank(0).label, 'Bronze I');
+  assert.equal(percentileToRank(9.9).label, 'Bronze V');
+  assert.equal(percentileToRank(50).tier, 'Platinum');
+  assert.equal(percentileToRank(99.9).tier, 'Champion');
   assert.equal(TIERS.length, 9);
 });
 

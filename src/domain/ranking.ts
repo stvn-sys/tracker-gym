@@ -1,18 +1,18 @@
 import { AGE_FACTORS, LEVEL_PERCENTILES, STRENGTH_STANDARDS, type Sex, type Standard } from '../data/strengthStandards.ts';
 import { MUSCLE_GROUPS, MUSCLES, type Muscle } from '../data/muscles.ts';
 
-export const TIERS = ['Iron', 'Bronze', 'Silver', 'Gold', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Legend'] as const;
+export const TIERS = ['Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Champion'] as const;
 export type Tier = (typeof TIERS)[number];
 
 /**
- * Percentile at which each tier starts (Iron starts at 0). Upper tiers are
- * narrower so Legend stays rare. Edit to make ranks easier/harder.
+ * Percentile at which each tier starts (Bronze starts at 0). Upper tiers are
+ * narrower so Champion stays rare. Edit to make ranks easier/harder.
  */
 export const TIER_START_PERCENTILE = [0, 10, 25, 40, 55, 70, 82, 91, 97];
 
 export const TIER_COLORS: Record<Tier, string> = {
-  Iron: '#7A8194', Bronze: '#C27C4E', Silver: '#C3CAD9', Gold: '#F2C14E', Emerald: '#2ECC8F',
-  Diamond: '#5CC8FF', Master: '#E0567A', Grandmaster: '#F3E3B0', Legend: '#A970FF',
+  Bronze: '#C27C4E', Silver: '#C3CAD9', Gold: '#F2C14E', Platinum: '#6FD6C8', Emerald: '#2ECC71',
+  Diamond: '#5CB8FF', Master: '#B56CFF', Grandmaster: '#FF5A7A', Champion: '#FFD866',
 };
 export const UNRANKED_COLOR = '#353A52';
 const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
