@@ -1,5 +1,5 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
-import { EQUIPMENT, type Equipment } from '../data/equipment';
+import { CABLE_ATTACHMENTS, EQUIPMENT, type Equipment } from '../data/equipment';
 import type { Accent, ThemeName } from '../theme/colors';
 import { getJSON, setJSON } from './kv';
 
@@ -19,8 +19,12 @@ export interface Prefs {
   weekStart: 0 | 1;         // 0 = Sunday, 1 = Monday
   // Units
   lengthUnit: 'cm' | 'in';
-  // Equipment you have access to
+  // Equipment you have access to (no longer shown in Settings)
   equipment: Equipment[];
+  // Cable attachments to choose from (editable in Settings)
+  attachments: string[];
+  // Gym locations (editable in Settings); asked for when starting a workout
+  gyms: string[];
   // Look
   theme: ThemeName;
   accent: Accent;
@@ -37,6 +41,8 @@ export const DEFAULT_PREFS: Prefs = {
   schedule: 'weekdays', weekStart: 1,
   lengthUnit: 'cm',
   equipment: [...EQUIPMENT],
+  attachments: [...CABLE_ATTACHMENTS],
+  gyms: [],
   theme: 'dark', accent: 'blue',
   remindWorkout: { on: false, hour: 17, minute: 30 },
   remindWeigh: { on: false, hour: 7, minute: 30 },

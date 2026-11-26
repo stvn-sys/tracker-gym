@@ -7,7 +7,7 @@ import { useProfile } from '../../components/ProfileContext';
 import { RadarChart } from '../../components/RadarChart';
 import { TierBadge } from '../../components/TierBadge';
 import { Card, SectionTitle, styles } from '../../components/ui';
-import { MUSCLES, MUSCLE_LABEL, type Muscle } from '../../data/muscles';
+import { MUSCLES, MUSCLE_LABEL, MUSCLE_REGIONS, type Muscle } from '../../data/muscles';
 import { percentileToRank, TIER_COLORS, TIERS, UNRANKED_COLOR, type Rank } from '../../domain/ranking';
 import { formatWeight } from '../../domain/units';
 import { latestBodyweightKg } from '../../repo/bodyweight';
@@ -101,19 +101,31 @@ export function RanksView() {
       )}
 
       <SectionTitle>Muscle rankings</SectionTitle>
-      {MUSCLES.map((m) => {
-        const r = muscleRank(m);
+      {MUSCLE_REGIONS.map((region) => {
+        const ranks = region.muscles.map((m) => muscleRank(m)).filter((r): r is Rank => !!r);
+        const avg = ranks.length ? percentileToRank(ranks.reduce((a, r) => a + r.percentile, 0) / ranks.length) : null;
         return (
-          <View key={m} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 4 }}>
-            <TierBadge rank={r} size={34} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.text}>{MUSCLE_LABEL[m]}</Text>
-              <Text style={{ color: r ? TIER_COLORS[r.tier] : colors.textDim, fontWeight: '700', fontSize: 13 }}>
-                {r ? r.label.toUpperCase() : 'UNRANKED'}
-              </Text>
+          <Card key={region.label} style={{ gap: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={[styles.text, { fontWeight: '800', fontSize: 18 }]}>{region.label}</Text>
+              <Text style={{ color: avg ? TIER_COLORS[avg.tier] : colors.textDim, fontWeight: '800' }}>{avg ? avg.label : 'Unranked'}</Text>
             </View>
-            {r && <ProgressBar value={r.progress} color={TIER_COLORS[r.tier]} />}
-          </View>
+            {region.muscles.map((m) => {
+              const r = muscleRank(m);
+              return (
+                <View key={m} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 2 }}>
+                  <TierBadge rank={r} size={34} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.text}>{MUSCLE_LABEL[m]}</Text>
+                    <Text style={{ color: r ? TIER_COLORS[r.tier] : colors.textDim, fontWeight: '700', fontSize: 13 }}>
+                      {r ? r.label.toUpperCase() : 'UNRANKED'}
+                    </Text>
+                  </View>
+                  {r && <ProgressBar value={r.progress} color={TIER_COLORS[r.tier]} />}
+                </View>
+              );
+            })}
+          </Card>
         );
       })}
 

@@ -5,7 +5,7 @@ import {
   DEFAULT_ADDON_PLATES_KG, DEFAULT_INCREMENT_KG, EQUIPMENT, EQUIPMENT_LABEL, equipmentDetail,
   supportsAttachment, supportsBarType, supportsLaterality, type Equipment,
 } from '../data/equipment';
-import { MUSCLES, MUSCLE_LABEL, type Muscle } from '../data/muscles';
+import { MUSCLE_LABEL, MUSCLE_REGIONS, type Muscle } from '../data/muscles';
 import { listBrands, type Brand } from '../repo/brands';
 import { createExercise, getExercise, listExercises, type Exercise } from '../repo/exercises';
 import { colors } from '../theme/colors';
@@ -128,7 +128,7 @@ function QuickCreate({ initialName, initialEquipment, onCreated }: { initialName
       laterality: supportsLaterality(equipment) ? 'bilateral' : null,
       attachment: null, pulleys: supportsAttachment(equipment) ? 1 : null,
       barType: supportsBarType(equipment) ? 'Olympic barbell' : null,
-      restSeconds: null, brandId: null, seriesId: null,
+      restSeconds: null, notes: null, brandId: null, seriesId: null,
     });
     onCreated(id);
   };
@@ -143,9 +143,14 @@ function QuickCreate({ initialName, initialEquipment, onCreated }: { initialName
         {EQUIPMENT.map((e) => <Chip key={e} label={EQUIPMENT_LABEL[e]} active={equipment === e} onPress={() => setEquipment(e)} />)}
       </ChipRow>
       <Text style={styles.dim}>Main muscle</Text>
-      <ChipRow wrap>
-        {MUSCLES.map((m) => <Chip key={m} label={MUSCLE_LABEL[m]} active={muscle === m} onPress={() => setMuscle(m)} />)}
-      </ChipRow>
+      {MUSCLE_REGIONS.map((r) => (
+        <View key={r.label} style={{ gap: 6 }}>
+          <Text style={[styles.dim, { fontSize: 12 }]}>{r.label}</Text>
+          <ChipRow wrap>
+            {r.muscles.map((m) => <Chip key={m} label={MUSCLE_LABEL[m]} active={muscle === m} onPress={() => setMuscle(m)} />)}
+          </ChipRow>
+        </View>
+      ))}
       <Text style={[styles.dim, { fontSize: 13 }]}>Bar type, pulleys, brand, rest time and the rest can be set later with Edit exercise.</Text>
       <Button label="Create and add" onPress={create} />
     </ScrollView>

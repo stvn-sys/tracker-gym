@@ -32,6 +32,8 @@ export default function Settings() {
   const groups: RowDef[][] = [
     [
       { section: 'workout', label: 'Workout', icon: 'play', tile: TILE.green, value: `${rest} rest · ${prefs.autoRest ? 'Auto timer' : 'Manual timer'}`, keywords: 'rest timer prefill previous awake' },
+      { section: 'gyms', label: 'Gyms', icon: 'pin', tile: TILE.gray, value: prefs.gyms.length ? (prefs.gyms.length === 1 ? prefs.gyms[0] : `${prefs.gyms.length} gyms`) : 'None', keywords: 'gym location place' },
+      { section: 'attachments', label: 'Attachments', icon: 'link', tile: TILE.gray, value: `${prefs.attachments.length}`, keywords: 'cable attachment rope handle bar' },
       { section: 'alerts', label: 'Timer alerts', icon: 'speaker', tile: TILE.pink, value: [prefs.sound && 'Sound', prefs.vibrate && 'Vibrate'].filter(Boolean).join(' · ') || 'Silent', keywords: 'sound vibrate vibration beep' },
       { section: 'reminders', label: 'Reminders', icon: 'bell', tile: TILE.red, value: reminders.length ? reminders.join(' · ') : 'Off', keywords: 'notification notify water weigh' },
     ],

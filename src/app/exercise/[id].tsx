@@ -6,10 +6,11 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useProfile } from '../../components/ProfileContext';
 import { Button, Card, Chip, ChipRow, inputStyle, SectionTitle, styles } from '../../components/ui';
 import {
-  BAR_TYPES, CABLE_ATTACHMENTS, DEFAULT_ADDON_PLATES_KG, PULLEY_OPTIONS, supportsBarType, DEFAULT_INCREMENT_KG, EQUIPMENT, EQUIPMENT_LABEL,
+  BAR_TYPES, DEFAULT_ADDON_PLATES_KG, PULLEY_OPTIONS, supportsBarType, DEFAULT_INCREMENT_KG, EQUIPMENT, EQUIPMENT_LABEL,
   supportsAddonPlates, supportsAttachment, supportsBrand, supportsLaterality, type Equipment,
 } from '../../data/equipment';
-import { MUSCLES, MUSCLE_LABEL, type Muscle } from '../../data/muscles';
+import { MUSCLE_LABEL, MUSCLE_REGIONS, type Muscle } from '../../data/muscles';
+import { usePrefs } from '../../components/Prefs';
 import { formatWeight, fromDisplay, toDisplay } from '../../domain/units';
 import { createBrand, createSeries, listBrands, type Brand } from '../../repo/brands';
 import {
@@ -22,7 +23,7 @@ const ADDON_OPTIONS_KG = [0.5, 1, 1.25, 2.5];
 const blank: ExerciseInput = {
   name: '', primaryMuscle: 'chest', secondaryMuscles: [], equipment: 'dumbbell',
   incrementKg: DEFAULT_INCREMENT_KG.dumbbell, addonPlatesKg: [], laterality: 'bilateral',
-  attachment: null, pulleys: null, restSeconds: null, barType: null, brandId: null, seriesId: null,
+  attachment: null, pulleys: null, restSeconds: null, barType: null, notes: null, brandId: null, seriesId: null,
 };
 
 const REST_OPTIONS = [30, 60, 90, 120, 150, 180];
@@ -33,6 +34,7 @@ export default function ExerciseEditor() {
   const isNew = id === 'new';
   const db = useSQLiteContext();
   const { profile } = useProfile();
+  const { prefs } = usePrefs();
   const unit = profile.unit;
 
   const [form, setForm] = useState<ExerciseInput>(blank);
@@ -163,7 +165,7 @@ export default function ExerciseEditor() {
             </ChipRow>
             <Text style={styles.dim}>Attachment</Text>
             <ChipRow wrap>
-              {CABLE_ATTACHMENTS.map((a) => (
+              {[...new Set([...prefs.attachments, ...(form.attachment ? [form.attachment] : [])])].map((a) => (
                 <Chip key={a} label={a} active={form.attachment === a} onPress={() => set('attachment', form.attachment === a ? null : a)} />
               ))}
             </ChipRow>
@@ -228,20 +230,35 @@ export default function ExerciseEditor() {
       )}
 
       <SectionTitle>Primary muscle</SectionTitle>
-      <ChipRow wrap>
-        {MUSCLES.map((m) => <Chip key={m} label={MUSCLE_LABEL[m]} active={form.primaryMuscle === m} onPress={() => set('primaryMuscle', m)} />)}
-      </ChipRow>
+      {MUSCLE_REGIONS.map((r) => (
+        <View key={r.label} style={{ gap: 8 }}>
+          <Text style={styles.dim}>{r.label}</Text>
+          <ChipRow wrap>
+            {r.muscles.map((m) => <Chip key={m} label={MUSCLE_LABEL[m]} active={form.primaryMuscle === m} onPress={() => set('primaryMuscle', m)} />)}
+          </ChipRow>
+        </View>
+      ))}
 
       <SectionTitle>Secondary muscles</SectionTitle>
-      <ChipRow wrap>
-        {MUSCLES.filter((m) => m !== form.primaryMuscle).map((m) => (
-          <Chip key={m} label={MUSCLE_LABEL[m]} active={form.secondaryMuscles.includes(m)} onPress={() => toggleSecondary(m)} />
-        ))}
-      </ChipRow>
+      {MUSCLE_REGIONS.map((r) => (
+        <View key={r.label} style={{ gap: 8 }}>
+          <Text style={styles.dim}>{r.label}</Text>
+          <ChipRow wrap>
+            {r.muscles.filter((m) => m !== form.primaryMuscle).map((m) => (
+              <Chip key={m} label={MUSCLE_LABEL[m]} active={form.secondaryMuscles.includes(m)} onPress={() => toggleSecondary(m)} />
+            ))}
+          </ChipRow>
+        </View>
+      ))}
+
+      <SectionTitle>Notes</SectionTitle>
+      <TextInput value={form.notes ?? ''} onChangeText={(v) => set('notes', v)} multiline
+        placeholder="Seat height, grip, cues… shown every time you do this exercise" placeholderTextColor={colors.textDim}
+        style={[inputStyle, { minHeight: 80, textAlignVertical: 'top' }]} />
 
       <View style={{ gap: 10, marginTop: 16 }}>
         <Button label={isNew ? 'Create exercise' : 'Save'} onPress={save} />
-        {!isNew && <Button label="View 1RM progress" variant="ghost" onPress={() => router.push({ pathname: '/progress/[id]', params: { id } })} />}
+        {!isNew && <Button label="View progress" variant="ghost" onPress={() => router.push({ pathname: '/progress/[id]', params: { id } })} />}
         {!isNew && <Button label="Delete exercise" variant="danger" onPress={remove} />}
       </View>
     </ScrollView>

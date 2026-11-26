@@ -23,3 +23,10 @@ test('keys are unique and routines reference real exercises', () => {
 test('every cable exercise has an attachment', () => {
   for (const e of SEED_EXERCISES.filter((x) => supportsAttachment(x.equipment))) assert.ok(e.attachment, e.key);
 });
+
+test('upper/lower regions cover every muscle exactly once', async () => {
+  const { MUSCLE_REGIONS } = await import('./muscles.ts');
+  const all = MUSCLE_REGIONS.flatMap((r) => r.muscles);
+  assert.equal(all.length, MUSCLES.length);
+  assert.equal(new Set(all).size, MUSCLES.length);
+});

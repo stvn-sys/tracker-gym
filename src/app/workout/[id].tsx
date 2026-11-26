@@ -14,6 +14,7 @@ import { equipmentDetail } from '../../data/equipment';
 import { formatWeight, fromDisplay, toDisplay } from '../../domain/units';
 import { formatDuration, volumeKg } from '../../domain/workout';
 import { listBrands, type Brand } from '../../repo/brands';
+import { setExerciseNotes } from '../../repo/exercises';
 import {
   addExerciseToWorkout, addSet, addWarmups, deleteSet, discardWorkout, finishWorkout, getWorkout,
   linkSuperset, removeWorkoutExercise, setExerciseNote, swapExercise, unlinkSuperset, updateRoutineFromWorkout, updateSet,
@@ -39,6 +40,7 @@ export default function ActiveWorkout() {
   const [noteOpen, setNoteOpen] = useState(false);
   const [pairOpen, setPairOpen] = useState(false);
   const [noteText, setNoteText] = useState('');
+  const [keepText, setKeepText] = useState('');
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [rest, setRest] = useState<{ endsAt: number; total: number } | null>(null);
   const buzzed = useRef(false);
@@ -284,15 +286,21 @@ export default function ActiveWorkout() {
               ? <Action label="Unlink superset" onPress={async () => { await unlinkSuperset(db, we); reload(); }} />
               : <Action label="Superset" onPress={() => setPairOpen(true)} />}
             <Action label="Swap" onPress={() => setPicker('swap')} />
-            <Action label={we.note ? 'Edit note' : 'Note'} onPress={() => { setNoteText(we.note ?? ''); setNoteOpen(true); }} />
+            <Action label={we.note || we.exercise.notes ? 'Edit notes' : 'Notes'} onPress={() => { setNoteText(we.note ?? ''); setKeepText(we.exercise.notes ?? ''); setNoteOpen(true); }} />
             <Action label="Remove" onPress={() => showAlert(`Remove ${we.exercise.name}?`, undefined, [
               { text: 'Cancel', style: 'cancel' },
               { text: 'Remove', style: 'destructive', onPress: async () => { setSel(null); await removeWorkoutExercise(db, we.id); reload(); } },
             ])} />
           </ScrollView>
 
+          {we.exercise.notes && (
+            <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: 10, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: colors.accent }}>
+              <Text style={{ color: colors.accent, fontSize: 11, fontWeight: '800', letterSpacing: 0.5 }}>EXERCISE NOTES</Text>
+              <Text style={{ color: colors.text, marginTop: 2 }}>{we.exercise.notes}</Text>
+            </View>
+          )}
           {we.note && (
-            <Text style={{ color: colors.textDim, fontStyle: 'italic', marginBottom: 8 }}>📝 {we.note}</Text>
+            <Text style={{ color: colors.textDim, fontStyle: 'italic', marginBottom: 8 }}>Today: {we.note}</Text>
           )}
 
           <View style={rowStyle}>
@@ -394,10 +402,21 @@ export default function ActiveWorkout() {
       <Modal visible={noteOpen} transparent animationType="fade" onRequestClose={() => setNoteOpen(false)}>
         <View style={{ flex: 1, backgroundColor: '#000a', justifyContent: 'center', padding: 24 }}>
           <View style={{ backgroundColor: colors.surface, borderRadius: 16, padding: 16, gap: 12 }}>
-            <Text style={styles.section}>Note</Text>
-            <TextInput value={noteText} onChangeText={setNoteText} multiline autoFocus placeholder="Seat height 4, felt strong…"
-              placeholderTextColor={colors.textDim} style={[inputStyle, { minHeight: 90, textAlignVertical: 'top' }]} />
-            <Button label="Save note" onPress={async () => { if (we) await setExerciseNote(db, we.id, noteText); setNoteOpen(false); reload(); }} />
+            <Text style={styles.section}>Notes</Text>
+            <Text style={styles.dim}>Exercise notes · shown every time</Text>
+            <TextInput value={keepText} onChangeText={setKeepText} multiline placeholder="Seat height 4, grip just outside shoulders…"
+              placeholderTextColor={colors.textDim} style={[inputStyle, { minHeight: 70, textAlignVertical: 'top' }]} />
+            <Text style={styles.dim}>Today only</Text>
+            <TextInput value={noteText} onChangeText={setNoteText} multiline placeholder="Felt strong, left shoulder a bit tight…"
+              placeholderTextColor={colors.textDim} style={[inputStyle, { minHeight: 70, textAlignVertical: 'top' }]} />
+            <Button label="Save notes" onPress={async () => {
+              if (we) {
+                await setExerciseNote(db, we.id, noteText);
+                await setExerciseNotes(db, we.exercise.id, keepText);
+              }
+              setNoteOpen(false);
+              reload();
+            }} />
             <Button label="Cancel" variant="ghost" onPress={() => setNoteOpen(false)} />
           </View>
         </View>

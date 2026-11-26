@@ -227,4 +227,9 @@ export const MIGRATIONS: string[] = [
   UPDATE exercises SET bar_type = 'Olympic barbell' WHERE equipment = 'barbell' AND bar_type IS NULL;
   ALTER TABLE routine_exercises ADD COLUMN target_reps_max INTEGER;
   `,
+  // 7: remembered notes per exercise, gym per workout
+  `
+  ALTER TABLE exercises ADD COLUMN notes TEXT;
+  ALTER TABLE workouts ADD COLUMN gym TEXT;
+  `,
 ];

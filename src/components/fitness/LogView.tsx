@@ -26,7 +26,7 @@ export function LogView() {
     return items.filter((w) => {
       const d = new Date(w.startedAt);
       const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      const hay = [w.name, ...w.exerciseNames, dateLabel(w.startedAt), iso, d.toLocaleDateString()].join(' ').toLowerCase();
+      const hay = [w.name, w.gym ?? '', ...w.exerciseNames, dateLabel(w.startedAt), iso, d.toLocaleDateString()].join(' ').toLowerCase();
       return hay.includes(q);
     });
   }, [items, query]);
@@ -45,7 +45,7 @@ export function LogView() {
               <Text style={styles.dim}>{dateLabel(item.startedAt)}</Text>
             </View>
             <Text style={{ color: colors.accent }}>
-              {item.endedAt ? formatDuration(item.endedAt - item.startedAt) : ''} · {formatWeight(item.volumeKg, profile.unit)} · {item.setCount} sets
+              {item.endedAt ? formatDuration(item.endedAt - item.startedAt) : ''} · {formatWeight(item.volumeKg, profile.unit)} · {item.setCount} sets{item.gym ? ` · ${item.gym}` : ''}
             </Text>
             <Text style={styles.dim} numberOfLines={2}>{item.exerciseNames.join(' · ')}</Text>
           </Card>

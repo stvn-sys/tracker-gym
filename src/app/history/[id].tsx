@@ -35,6 +35,7 @@ export default function WorkoutDetailScreen() {
       <Stack.Screen options={{ title: w.name }} />
       <Text style={styles.dim}>
         {date.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        {w.gym ? ` · ${w.gym}` : ''}
       </Text>
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <Stat label="Duration" value={w.endedAt ? formatDuration(w.endedAt - w.startedAt) : 'In progress'} />

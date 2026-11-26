@@ -20,6 +20,8 @@ export interface Exercise {
   attachment: string | null;
   /** Pulleys used, cable exercises only (1–4). */
   pulleys: number | null;
+  /** Notes kept with the exercise and shown every time you do it. */
+  notes: string | null;
   /** Kind of bar, for Bar exercises (e.g. Trap bar). */
   barType: string | null;
   /** Rest after a set of this exercise, in seconds; null = default from Settings. */
@@ -33,7 +35,7 @@ export type ExerciseInput = Omit<Exercise, 'id' | 'builtinKey'>;
 
 interface Row {
   id: string; name: string; primary_muscle: string; secondary_muscles: string; equipment: string;
-  increment_kg: number; addon_plates: string; laterality: string | null; attachment: string | null; pulleys: number | null; rest_seconds: number | null; bar_type: string | null;
+  increment_kg: number; addon_plates: string; laterality: string | null; attachment: string | null; pulleys: number | null; rest_seconds: number | null; bar_type: string | null; notes: string | null;
   brand_id: string | null; series_id: string | null; builtin_key: string | null;
 }
 
@@ -50,6 +52,7 @@ export const mapExercise = (r: Row): Exercise => ({
   pulleys: r.pulleys ?? null,
   restSeconds: r.rest_seconds ?? null,
   barType: r.bar_type ?? null,
+  notes: r.notes ?? null,
   brandId: r.brand_id,
   seriesId: r.series_id,
   builtinKey: r.builtin_key,
@@ -68,15 +71,16 @@ export function seedToInput(e: SeedExercise): ExerciseInput {
     pulleys: e.pulleys,
     restSeconds: null,
     barType: e.barType,
+    notes: null,
     brandId: null,
     seriesId: null,
   };
 }
 
-const COLS = 'name, primary_muscle, secondary_muscles, equipment, increment_kg, addon_plates, laterality, attachment, pulleys, rest_seconds, bar_type, brand_id, series_id';
+const COLS = 'name, primary_muscle, secondary_muscles, equipment, increment_kg, addon_plates, laterality, attachment, pulleys, rest_seconds, bar_type, notes, brand_id, series_id';
 const values = (e: ExerciseInput) => [
   e.name.trim(), e.primaryMuscle, JSON.stringify(e.secondaryMuscles), e.equipment, e.incrementKg,
-  JSON.stringify(e.addonPlatesKg), e.laterality, e.attachment, e.pulleys, e.restSeconds, e.barType, e.brandId, e.seriesId,
+  JSON.stringify(e.addonPlatesKg), e.laterality, e.attachment, e.pulleys, e.restSeconds, e.barType, e.notes?.trim() || null, e.brandId, e.seriesId,
 ];
 
 export async function listExercises(db: SQLiteDatabase): Promise<Exercise[]> {
@@ -94,7 +98,7 @@ export async function getExercise(db: SQLiteDatabase, id: string): Promise<Exerc
 export async function createExercise(db: SQLiteDatabase, e: ExerciseInput, builtinKey: string | null = null) {
   const id = newId();
   await db.runAsync(
-    `INSERT INTO exercises (id, ${COLS}, builtin_key, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO exercises (id, ${COLS}, builtin_key, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     id, ...values(e), builtinKey, now(),
   );
   return id;
@@ -106,7 +110,7 @@ export const insertSeedExercise = (db: SQLiteDatabase, e: SeedExercise) =>
 export async function updateExercise(db: SQLiteDatabase, id: string, e: ExerciseInput) {
   await db.runAsync(
     `UPDATE exercises SET name = ?, primary_muscle = ?, secondary_muscles = ?, equipment = ?, increment_kg = ?,
-     addon_plates = ?, laterality = ?, attachment = ?, pulleys = ?, rest_seconds = ?, bar_type = ?, brand_id = ?, series_id = ?, updated_at = ? WHERE id = ?`,
+     addon_plates = ?, laterality = ?, attachment = ?, pulleys = ?, rest_seconds = ?, bar_type = ?, notes = ?, brand_id = ?, series_id = ?, updated_at = ? WHERE id = ?`,
     ...values(e), now(), id,
   );
 }
@@ -134,4 +138,9 @@ export async function restoreDefaultExercises(db: SQLiteDatabase) {
       }
     }
   });
+}
+
+/** Saves just the remembered notes of an exercise (used from the workout screen). */
+export async function setExerciseNotes(db: SQLiteDatabase, id: string, notes: string) {
+  await db.runAsync('UPDATE exercises SET notes = ?, updated_at = ? WHERE id = ?', notes.trim() || null, now(), id);
 }

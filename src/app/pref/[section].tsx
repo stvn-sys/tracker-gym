@@ -13,6 +13,7 @@ import { ChoiceRow, Group, Step, TimeRow, ToggleRow } from '../../components/Set
 import { Button, inputStyle, styles } from '../../components/ui';
 import { playBeep, buzz } from '../../components/alerts';
 import { APP_VERSION } from '../../data/appInfo';
+import { CABLE_ATTACHMENTS } from '../../data/equipment';
 import { exportAll, importAll, resetAll } from '../../repo/backup';
 import { DEFAULT_GOALS, getGoals, setGoals, type Goals } from '../../repo/kv';
 import { latestBodyweightKg, logBodyweight } from '../../repo/bodyweight';
@@ -20,7 +21,7 @@ import { formatBodyweight, fromDisplay } from '../../domain/units';
 import { ACCENTS, colors, type Accent } from '../../theme/colors';
 
 const TITLES: Record<string, string> = {
-  profile: 'Profile', workout: 'Workout', alerts: 'Timer alerts', reminders: 'Reminders', schedule: 'Plan & schedule',
+  profile: 'Profile', workout: 'Workout', gyms: 'Gyms', attachments: 'Attachments', alerts: 'Timer alerts', reminders: 'Reminders', schedule: 'Plan & schedule',
   units: 'Units & language', goals: 'Nutrition & goals', look: 'Look & Home', data: 'Data & backup', about: 'About',
 };
 
@@ -31,6 +32,8 @@ export default function PrefSection() {
       <Stack.Screen options={{ title: TITLES[section] ?? 'Settings' }} />
       {section === 'profile' && <ProfileSection />}
       {section === 'workout' && <WorkoutSection />}
+      {section === 'gyms' && <GymsSection />}
+      {section === 'attachments' && <AttachmentsSection />}
       {section === 'alerts' && <AlertsSection />}
       {section === 'reminders' && <RemindersSection />}
       {section === 'schedule' && <ScheduleSection />}
@@ -115,6 +118,63 @@ function WorkoutSection() {
         <ToggleRow label="Pre-fill from last session" sub="Weight and reps start at what you did last time." value={prefs.prefill} onChange={(v) => setPrefs({ prefill: v })} />
         <ToggleRow label="Keep screen on during workouts" value={prefs.keepAwake} onChange={(v) => setPrefs({ keepAwake: v })} />
       </Group>
+    </>
+  );
+}
+
+/** Editable list of names: rename in place, remove, add. */
+function ListEditor({ items, onChange, placeholder }: { items: string[]; onChange: (next: string[]) => void; placeholder: string }) {
+  const [adding, setAdding] = useState('');
+  const add = () => {
+    const v = adding.trim();
+    if (!v || items.some((x) => x.toLowerCase() === v.toLowerCase())) { setAdding(''); return; }
+    onChange([...items, v]);
+    setAdding('');
+  };
+  return (
+    <Group>
+      {items.map((it, i) => (
+        <View key={`${it}-${i}`} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, gap: 8 }}>
+          <CommitInput initial={it} style={{ flex: 1, minWidth: 0, color: colors.text, fontSize: 17, paddingVertical: 8 }}
+            onCommit={(t) => { const v = t.trim(); if (v) onChange(items.map((x, j) => (j === i ? v : x))); }} />
+          <Pressable onPress={() => onChange(items.filter((_, j) => j !== i))} hitSlop={8}
+            style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: colors.danger, fontWeight: '800' }}>✕</Text>
+          </Pressable>
+        </View>
+      ))}
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, gap: 8 }}>
+        <TextInput value={adding} onChangeText={setAdding} onSubmitEditing={add} placeholder={placeholder} placeholderTextColor={colors.textDim}
+          style={{ flex: 1, minWidth: 0, color: colors.text, fontSize: 17, paddingVertical: 8 }} />
+        <Pressable onPress={add} hitSlop={8} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, backgroundColor: colors.accent }}>
+          <Text style={{ color: '#0B0B0D', fontWeight: '800' }}>Add</Text>
+        </Pressable>
+      </View>
+    </Group>
+  );
+}
+
+function GymsSection() {
+  const { prefs, setPrefs } = usePrefs();
+  return (
+    <>
+      <ListEditor items={prefs.gyms} onChange={(gyms) => setPrefs({ gyms })} placeholder="Add a gym, e.g. Basic-Fit Centrum" />
+      <Text style={[styles.dim, { marginHorizontal: 16 }]}>
+        With two or more gyms, you pick one when you start a workout. With one, it is used automatically. Tap a name to rename it.
+      </Text>
+    </>
+  );
+}
+
+function AttachmentsSection() {
+  const { prefs, setPrefs } = usePrefs();
+  return (
+    <>
+      <ListEditor items={prefs.attachments} onChange={(attachments) => setPrefs({ attachments })} placeholder="Add an attachment" />
+      <Text style={[styles.dim, { marginHorizontal: 16 }]}>
+        These are the choices for cable exercises. Tap a name to rename it. Exercises that already use a removed attachment keep it.
+      </Text>
+      <Button label="Restore default attachments" variant="ghost" onPress={() => setPrefs({ attachments: [...CABLE_ATTACHMENTS] })} />
     </>
   );
 }

@@ -24,7 +24,15 @@ export async function startOrResume(db: Parameters<typeof startWorkout>[0], rout
     return;
   }
   const prefs = await loadPrefs(db);
-  openWorkout(await startWorkout(db, routineId, prefs.prefill));
+  const go = async (gym: string | null) => openWorkout(await startWorkout(db, routineId, prefs.prefill, gym));
+  if (prefs.gyms.length > 1) {
+    showAlert('Where are you training?', 'You can change the list in Settings › Gyms.', [
+      ...prefs.gyms.map((g) => ({ text: g, onPress: () => { go(g); } })),
+      { text: 'Cancel', style: 'cancel' as const },
+    ]);
+    return;
+  }
+  await go(prefs.gyms[0] ?? null);
 }
 
 export function WodCard() {

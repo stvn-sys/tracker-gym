@@ -6,6 +6,8 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { Chip, ChipRow, inputStyle, styles } from '../../components/ui';
 import { EQUIPMENT, EQUIPMENT_LABEL, equipmentDetail, type Equipment } from '../../data/equipment';
 import { listBrands, type Brand } from '../../repo/brands';
+import { allE1rmSeries } from '../../repo/stats';
+import { LineChart } from '../LineChart';
 import { MUSCLES, MUSCLE_LABEL, type Muscle } from '../../data/muscles';
 import { listExercises, restoreDefaultExercises, type Exercise } from '../../repo/exercises';
 import { colors } from '../../theme/colors';
@@ -21,7 +23,8 @@ export function LibraryView() {
   const [sort, setSort] = useState<Sort>('name');
 
   const [brands, setBrands] = useState<Brand[]>([]);
-  const reload = useCallback(() => { listExercises(db).then(setItems); listBrands(db).then(setBrands); }, [db]);
+  const [series, setSeries] = useState<Map<string, number[]>>(new Map());
+  const reload = useCallback(() => { listExercises(db).then(setItems); listBrands(db).then(setBrands); allE1rmSeries(db).then(setSeries); }, [db]);
   useFocusEffect(reload);
 
   const visible = useMemo(() => {
@@ -88,9 +91,10 @@ export function LibraryView() {
         }
         renderItem={({ item }) => (
           <Pressable
-            onPress={() => router.push({ pathname: '/exercise/[id]', params: { id: item.id } })}
-            style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}
+            onPress={() => router.push({ pathname: '/progress/[id]', params: { id: item.id } })}
+            style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border, flexDirection: 'row', alignItems: 'center', gap: 10 }}
           >
+            <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={styles.text}>
               {item.name}
               {!item.builtinKey && <Text style={{ color: colors.accent, fontSize: 12 }}>  CUSTOM</Text>}
@@ -99,6 +103,12 @@ export function LibraryView() {
               {MUSCLE_LABEL[item.primaryMuscle]} · {equipmentDetail(item, brands)}
               {item.laterality === 'unilateral' ? ' · Unilateral' : ''}
             </Text>
+            </View>
+            {(series.get(item.id)?.length ?? 0) >= 2 && (
+              <View style={{ width: 72 }}>
+                <LineChart points={series.get(item.id)!.map((y, i) => ({ x: i, y }))} height={32} />
+              </View>
+            )}
           </Pressable>
         )}
       />

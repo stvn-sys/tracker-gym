@@ -34,6 +34,8 @@ export interface Workout {
   startedAt: number;
   endedAt: number | null;
   note: string | null;
+  /** Gym where it was done (from Settings › Gyms). */
+  gym: string | null;
 }
 
 export interface WorkoutDetail extends Workout {
@@ -50,10 +52,10 @@ const mapSet = (r: SetRow): WorkoutSet => ({
 });
 
 interface WorkoutRow {
-  id: string; routine_id: string | null; name: string; started_at: number; ended_at: number | null; note: string | null;
+  id: string; routine_id: string | null; name: string; started_at: number; ended_at: number | null; note: string | null; gym: string | null;
 }
 const mapWorkout = (r: WorkoutRow): Workout => ({
-  id: r.id, routineId: r.routine_id, name: r.name, startedAt: r.started_at, endedAt: r.ended_at, note: r.note,
+  id: r.id, routineId: r.routine_id, name: r.name, startedAt: r.started_at, endedAt: r.ended_at, note: r.note, gym: r.gym ?? null,
 });
 
 /** Completed working sets of the most recent finished workout that included this exercise. */
@@ -111,7 +113,7 @@ export async function addExerciseToWorkout(
   return weId;
 }
 
-export async function startWorkout(db: SQLiteDatabase, routineId: string | null, usePrevious = true): Promise<string> {
+export async function startWorkout(db: SQLiteDatabase, routineId: string | null, usePrevious = true, gym: string | null = null): Promise<string> {
   const id = newId();
   await db.withTransactionAsync(async () => {
     const routine = routineId
@@ -119,8 +121,8 @@ export async function startWorkout(db: SQLiteDatabase, routineId: string | null,
       : null;
     const t = now();
     await db.runAsync(
-      'INSERT INTO workouts (id, routine_id, name, started_at, updated_at) VALUES (?, ?, ?, ?, ?)',
-      id, routineId, routine?.name ?? 'Workout', t, t,
+      'INSERT INTO workouts (id, routine_id, name, started_at, gym, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
+      id, routineId, routine?.name ?? 'Workout', t, gym, t,
     );
     if (!routineId) return;
     const items = await db.getAllAsync<{ exercise_id: string; target_sets: number; target_reps: number; superset_id: string | null }>(
