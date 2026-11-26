@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
+import { CommitInput } from '../../components/CommitInput';
 import { showAlert } from '../../components/Dialog';
 import { RoutineBody, VolumeList } from '../../components/fitness/RoutineMuscles';
 import { Button, Card, inputStyle, SectionTitle, styles } from '../../components/ui';
@@ -13,10 +14,9 @@ export default function RoutineGroupScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const db = useSQLiteContext();
   const [g, setG] = useState<RoutineGroup | null>(null);
-  const [name, setName] = useState('');
 
   const reload = useCallback(() => {
-    getGroup(db, id).then((x) => { setG(x); if (x) setName(x.name); });
+    getGroup(db, id).then(setG);
   }, [db, id]);
   useFocusEffect(reload);
 
@@ -39,7 +39,9 @@ export default function RoutineGroupScreen() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={[styles.content, { paddingBottom: 48 }]} keyboardShouldPersistTaps="handled">
       <Stack.Screen options={{ title: g.name }} />
-      <TextInput value={name} onChangeText={setName} onEndEditing={() => name.trim() && renameGroup(db, g.id, name)}
+      <Text style={styles.dim}>Routine name (tap to rename)</Text>
+      <CommitInput key={g.id} initial={g.name} placeholder="Routine name" placeholderTextColor={colors.textDim}
+        onCommit={async (t) => { if (t.trim()) { await renameGroup(db, g.id, t); reload(); } }}
         style={[inputStyle, { fontSize: 20, fontWeight: '800' }]} />
       {g.isActive ? (
         <Text style={{ color: colors.success, fontWeight: '700' }}>● Active routine. Workout of the day comes from here.</Text>

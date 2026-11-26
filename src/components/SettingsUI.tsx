@@ -24,8 +24,8 @@ export function Group({ children, title, footer }: { children: ReactNode; title?
 
 export function IconTile({ name, color, size = 34 }: { name: IconName; color: string; size?: number }) {
   return (
-    <View style={{ width: size, height: size, borderRadius: size * 0.28, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>
-      <Icon name={name} size={size * 0.58} color="#fff" />
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <Icon name={name} size={size * 0.72} color={color} />
     </View>
   );
 }
@@ -34,7 +34,7 @@ export function IconTile({ name, color, size = 34 }: { name: IconName; color: st
 export function NavRow({ icon, tile, label, value, onPress }: { icon?: IconName; tile?: string; label: string; value?: string; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12, backgroundColor: pressed ? colors.surfaceAlt : 'transparent' })}>
-      {icon && tile && <IconTile name={icon} color={tile} />}
+      {icon && <IconTile name={icon} color={colors.accent} />}
       <Text style={{ color: colors.text, fontSize: 17, flexShrink: 0 }} numberOfLines={1}>{label}</Text>
       <Text style={{ color: colors.textDim, fontSize: 15, flex: 1, textAlign: 'right' }} numberOfLines={1}>{value ?? ''}</Text>
       <Icon name="chevron" size={18} color={colors.textDim} />

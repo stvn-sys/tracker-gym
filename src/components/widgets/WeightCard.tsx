@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Text } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
-import { formatWeight, fromDisplay, toDisplay } from '../../domain/units';
+import { formatBodyweight as formatWeight, fromDisplay, toDisplay } from '../../domain/units';
 import { listBodyweight, logBodyweight } from '../../repo/bodyweight';
 import { colors } from '../../theme/colors';
 import { EntryModal, num } from '../EntryModal';

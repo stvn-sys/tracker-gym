@@ -15,3 +15,10 @@ export function formatWeight(kg: number | null | undefined, unit: Unit, withUnit
   const r = unit === 'kg' ? Math.round(v * 2) / 2 : Math.round(v);
   return withUnit ? `${r} ${unit}` : `${r}`;
 }
+
+/** Bodyweight keeps one decimal (lifting weights round to plate steps instead). */
+export function formatBodyweight(kg: number | null | undefined, unit: Unit, withUnit = true): string {
+  if (kg == null) return '–';
+  const r = Math.round(toDisplay(kg, unit) * 10) / 10;
+  return withUnit ? `${r} ${unit}` : `${r}`;
+}

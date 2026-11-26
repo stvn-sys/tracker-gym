@@ -10,7 +10,7 @@ import { MetricCard } from '../../components/widgets/MetricCard';
 import { SleepCard } from '../../components/widgets/SleepCard';
 import { WeightCard } from '../../components/widgets/WeightCard';
 import { MEASUREMENTS, METRICS, VITALS } from '../../data/metrics';
-import { formatWeight } from '../../domain/units';
+import { formatBodyweight as formatWeight } from '../../domain/units';
 import { listBodyweight } from '../../repo/bodyweight';
 import { colors } from '../../theme/colors';
 

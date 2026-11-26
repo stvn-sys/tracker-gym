@@ -11,6 +11,8 @@ import { useLoad } from '../../components/widgets/common';
 import { APP_VERSION } from '../../data/appInfo';
 import { EQUIPMENT } from '../../data/equipment';
 import { getGoals } from '../../repo/kv';
+import { latestBodyweightKg } from '../../repo/bodyweight';
+import { formatBodyweight } from '../../domain/units';
 import { colors, TILE } from '../../theme/colors';
 
 
@@ -22,6 +24,7 @@ export default function Settings() {
   const { profile } = useProfile();
   const [query, setQuery] = useState('');
   const [goals] = useLoad(() => getGoals(db), [db]);
+  const [bw] = useLoad(() => latestBodyweightKg(db), [db]);
 
   const rest = `${Math.floor(profile.restSeconds / 60)}:${String(profile.restSeconds % 60).padStart(2, '0')}`;
   const reminders = [prefs.remindWorkout.on && 'Workout', prefs.remindWeigh.on && 'Weigh-in', prefs.remindWater.on && 'Water'].filter(Boolean);
@@ -64,13 +67,13 @@ export default function Settings() {
 
       {!q && (
         <Pressable onPress={() => open('profile')} style={{ flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: colors.surface, borderRadius: 18, padding: 14 }}>
-          <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
-            <Icon name="person" size={30} color={colors.textDim} />
+          <View style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderColor: colors.accent, alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="person" size={30} color={colors.accent} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ color: colors.text, fontSize: 20, fontWeight: '800' }}>{prefs.name || 'This phone'}</Text>
             <Text style={{ color: colors.textDim, fontSize: 14 }}>
-              {[profile.gender && cap(profile.gender), profile.age && `${profile.age} y`].filter(Boolean).join(' · ') || 'Set up your profile'} · data stays on this phone
+              {[profile.gender && cap(profile.gender), profile.age && `${profile.age} y`, bw && formatBodyweight(bw, profile.unit)].filter(Boolean).join(' · ') || 'Set up your profile'}
             </Text>
           </View>
           <Icon name="chevron" size={18} color={colors.textDim} />

@@ -3,6 +3,7 @@ import { Platform, Pressable, ScrollView, Share, Text, TextInput, View } from 'r
 import * as Clipboard from 'expo-clipboard';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
+import { CommitInput } from '../../components/CommitInput';
 import { useDataVersion } from '../../components/DataVersion';
 import { showAlert } from '../../components/Dialog';
 import { usePrefs } from '../../components/Prefs';
@@ -15,6 +16,8 @@ import { APP_VERSION } from '../../data/appInfo';
 import { EQUIPMENT, EQUIPMENT_LABEL } from '../../data/equipment';
 import { exportAll, importAll, resetAll } from '../../repo/backup';
 import { DEFAULT_GOALS, getGoals, setGoals, type Goals } from '../../repo/kv';
+import { latestBodyweightKg, logBodyweight } from '../../repo/bodyweight';
+import { formatBodyweight, fromDisplay } from '../../domain/units';
 import { ACCENTS, colors, type Accent } from '../../theme/colors';
 
 const TITLES: Record<string, string> = {
@@ -54,24 +57,42 @@ function FieldRow({ label, children }: { label: string; children: React.ReactNod
 const smallInput = { ...inputStyle, width: 120, textAlign: 'right' as const, paddingVertical: 8 };
 
 function ProfileSection() {
+  const db = useSQLiteContext();
+  const { bump } = useDataVersion();
   const { prefs, setPrefs } = usePrefs();
   const { profile, update } = useProfile();
+  const [bw, setBw] = useState<number | null | undefined>(undefined);
+  useEffect(() => { latestBodyweightKg(db).then(setBw); }, [db]);
   return (
     <>
-      <Group footer="Gender, age and your latest bodyweight are used to rank your lifts against strength standards.">
+      <Group footer="Gender, age and weight are used to rank your lifts against strength standards.">
         <FieldRow label="Name">
-          <TextInput defaultValue={prefs.name} onEndEditing={(e) => setPrefs({ name: e.nativeEvent.text.trim() })}
+          <CommitInput initial={prefs.name} onCommit={(t) => setPrefs({ name: t.trim() })}
             placeholder="Optional" placeholderTextColor={colors.textDim} style={[smallInput, { width: 160 }]} />
         </FieldRow>
         <ChoiceRow label="Gender" value={profile.gender ?? ''} onChange={(g) => g && update('gender', g)}
           options={[{ label: 'Male', value: 'male' }, { label: 'Female', value: 'female' }]} />
+        <FieldRow label={`Weight (${profile.unit})`}>
+          {bw !== undefined && (
+            <CommitInput key={`bw-${bw}-${profile.unit}`} initial={bw == null ? '' : formatBodyweight(bw, profile.unit, false)} keyboardType="decimal-pad"
+              placeholder="e.g. 80" placeholderTextColor={colors.textDim} style={smallInput}
+              onCommit={async (t) => {
+                const v = parseFloat(t.replace(',', '.'));
+                if (!Number.isFinite(v) || v <= 0) return;
+                const kg = Math.round(fromDisplay(v, profile.unit) * 100) / 100;
+                await logBodyweight(db, kg);
+                setBw(kg);
+                bump();
+              }} />
+          )}
+        </FieldRow>
         <FieldRow label="Age">
-          <TextInput defaultValue={profile.age?.toString() ?? ''} keyboardType="number-pad" placeholder="e.g. 30" placeholderTextColor={colors.textDim}
-            onEndEditing={(e) => { const v = parseInt(e.nativeEvent.text, 10); update('age', Number.isFinite(v) && v > 5 && v < 110 ? v : null); }}
+          <CommitInput initial={profile.age?.toString() ?? ''} keyboardType="number-pad" placeholder="e.g. 30" placeholderTextColor={colors.textDim}
+            onCommit={(t) => { const v = parseInt(t, 10); update('age', Number.isFinite(v) && v > 5 && v < 110 ? v : null); }}
             style={smallInput} />
         </FieldRow>
       </Group>
-      <Text style={[styles.dim, { marginHorizontal: 16 }]}>Bodyweight is taken from the weight log (Today or Health › Weight).</Text>
+      <Text style={[styles.dim, { marginHorizontal: 16 }]}>Changing your weight here logs it for today, the same as the Weight card. Your history is in Health › Weight.</Text>
     </>
   );
 }
@@ -217,8 +238,8 @@ function GoalsSection() {
     <Group title="Daily goals" footer={`Your macros add up to ${Math.round(macroKcal)} kcal (protein and carbs 4 kcal/g, fat 9 kcal/g).`}>
       {GOAL_FIELDS.map((f) => (
         <FieldRow key={f.key} label={f.label}>
-          <TextInput key={`${f.key}-${goals[f.key]}`} defaultValue={String(goals[f.key])} keyboardType="number-pad"
-            onEndEditing={(e) => change(f.key, e.nativeEvent.text)} style={smallInput} />
+          <CommitInput key={`${f.key}-${goals[f.key]}`} initial={String(goals[f.key])} keyboardType="number-pad"
+            onCommit={(t) => change(f.key, t)} style={smallInput} />
         </FieldRow>
       ))}
     </Group>
