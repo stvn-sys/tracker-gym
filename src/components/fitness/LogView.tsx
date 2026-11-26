@@ -3,7 +3,7 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { formatWeight } from '../../domain/units';
-import { formatDuration } from '../../domain/workout';
+import { formatWorkoutDuration } from '../../domain/workout';
 import { listHistory, type WorkoutSummary } from '../../repo/workouts';
 import { colors } from '../../theme/colors';
 import { useProfile } from '../ProfileContext';
@@ -42,10 +42,13 @@ export function LogView() {
           <Card style={{ gap: 4 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <Text style={[styles.text, { fontWeight: '700' }]}>{item.name}</Text>
-              <Text style={styles.dim}>{dateLabel(item.startedAt)}</Text>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={styles.dim}>{dateLabel(item.startedAt)}</Text>
+                {item.gym ? <Text style={[styles.dim, { fontSize: 13 }]}>{item.gym}</Text> : null}
+              </View>
             </View>
             <Text style={{ color: colors.accent }}>
-              {item.endedAt ? formatDuration(item.endedAt - item.startedAt) : ''} · {formatWeight(item.volumeKg, profile.unit)} · {item.setCount} sets{item.gym ? ` · ${item.gym}` : ''}
+              {item.endedAt ? formatWorkoutDuration(item.endedAt - item.startedAt) : ''} · {formatWeight(item.volumeKg, profile.unit)} · {item.setCount} {item.setCount === 1 ? 'set' : 'sets'}
             </Text>
             <Text style={styles.dim} numberOfLines={2}>{item.exerciseNames.join(' · ')}</Text>
           </Card>

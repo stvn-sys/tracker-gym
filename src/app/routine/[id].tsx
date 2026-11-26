@@ -4,6 +4,7 @@ import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router
 import { useSQLiteContext } from 'expo-sqlite';
 import { showAlert } from '../../components/Dialog';
 import { ExercisePicker } from '../../components/ExercisePicker';
+import { Icon } from '../../components/Icon';
 import { usePrefs } from '../../components/Prefs';
 import { Button, Card, inputStyle, SectionTitle, styles } from '../../components/ui';
 import { equipmentDetail } from '../../data/equipment';
@@ -200,7 +201,9 @@ function IconBtn({ label, onPress, disabled }: { label: string; onPress: () => v
   return (
     <Pressable onPress={onPress} disabled={disabled} hitSlop={6}
       style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center', opacity: disabled ? 0.3 : 1 }}>
-      <Text style={{ color: colors.text, fontWeight: '800', fontSize: 16 }}>{label}</Text>
+      {label === '⋯'
+        ? <Icon name="more" size={20} color={colors.text} />
+        : <Text style={{ color: colors.text, fontWeight: '800', fontSize: 16 }}>{label}</Text>}
     </Pressable>
   );
 }

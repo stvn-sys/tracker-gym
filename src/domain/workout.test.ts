@@ -25,3 +25,12 @@ test('formatDuration', () => {
   assert.equal(formatDuration(65_000), '1:05');
   assert.equal(formatDuration(3_725_000), '1:02:05');
 });
+
+test('formatWorkoutDuration rounds up to minutes', async () => {
+  const { formatWorkoutDuration } = await import('./workout.ts');
+  assert.equal(formatWorkoutDuration(150_000), '3min');
+  assert.equal(formatWorkoutDuration((2 * 3600 + 21 * 60 + 52) * 1000), '2h22m');
+  assert.equal(formatWorkoutDuration(2 * 3600 * 1000), '2h');
+  assert.equal(formatWorkoutDuration(59 * 60 * 1000 + 1), '1h');
+  assert.equal(formatWorkoutDuration(20_000), '1min');
+});

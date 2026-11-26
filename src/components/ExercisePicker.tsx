@@ -1,15 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { FlatList, Modal, Pressable, Text, TextInput, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
-import {
-  DEFAULT_ADDON_PLATES_KG, DEFAULT_INCREMENT_KG, EQUIPMENT, EQUIPMENT_LABEL, equipmentDetail,
-  supportsAttachment, supportsBarType, supportsLaterality, type Equipment,
-} from '../data/equipment';
-import { MUSCLE_LABEL, MUSCLE_REGIONS, type Muscle } from '../data/muscles';
+import { EQUIPMENT, EQUIPMENT_LABEL, equipmentDetail, type Equipment } from '../data/equipment';
+import { MUSCLE_LABEL, type Muscle } from '../data/muscles';
 import { listBrands, type Brand } from '../repo/brands';
-import { createExercise, getExercise, listExercises, type Exercise } from '../repo/exercises';
+import { getExercise, listExercises, type Exercise } from '../repo/exercises';
+import { ExerciseForm } from './ExerciseForm';
 import { colors } from '../theme/colors';
-import { Button, Chip, ChipRow, inputStyle, styles } from './ui';
+import { Chip, ChipRow, inputStyle, styles } from './ui';
 
 interface Props {
   visible: boolean;
@@ -59,10 +57,11 @@ export function ExercisePicker({ visible, title, preferMuscle, excludeId, onPick
         </View>
 
         {creating ? (
-          <QuickCreate
+          <ExerciseForm
+            id={null}
             initialName={query}
             initialEquipment={equipment}
-            onCreated={async (id) => {
+            onSaved={async (id) => {
               const ex = await getExercise(db, id);
               setCreating(false);
               setQuery('');
@@ -109,50 +108,5 @@ export function ExercisePicker({ visible, title, preferMuscle, excludeId, onPick
         )}
       </View>
     </Modal>
-  );
-}
-
-/** Minimal create form; everything else can be changed later via Edit exercise. */
-function QuickCreate({ initialName, initialEquipment, onCreated }: { initialName: string; initialEquipment: Equipment | null; onCreated: (id: string) => void }) {
-  const db = useSQLiteContext();
-  const [name, setName] = useState(initialName);
-  const [equipment, setEquipment] = useState<Equipment>(initialEquipment ?? 'dumbbell');
-  const [muscle, setMuscle] = useState<Muscle>('chest');
-  const [error, setError] = useState('');
-
-  const create = async () => {
-    if (!name.trim()) { setError('Give the exercise a name.'); return; }
-    const id = await createExercise(db, {
-      name, primaryMuscle: muscle, secondaryMuscles: [], equipment,
-      incrementKg: DEFAULT_INCREMENT_KG[equipment], addonPlatesKg: DEFAULT_ADDON_PLATES_KG[equipment] ?? [],
-      laterality: supportsLaterality(equipment) ? 'bilateral' : null,
-      attachment: null, pulleys: supportsAttachment(equipment) ? 1 : null,
-      barType: supportsBarType(equipment) ? 'Olympic barbell' : null,
-      restSeconds: null, notes: null, brandId: null, seriesId: null,
-    });
-    onCreated(id);
-  };
-
-  return (
-    <ScrollView contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
-      <TextInput value={name} onChangeText={(t) => { setName(t); setError(''); }} placeholder="Exercise name" placeholderTextColor={colors.textDim}
-        autoFocus style={[inputStyle, { fontSize: 18, fontWeight: '700' }]} />
-      {error ? <Text style={{ color: colors.danger }}>{error}</Text> : null}
-      <Text style={styles.dim}>Equipment</Text>
-      <ChipRow wrap>
-        {EQUIPMENT.map((e) => <Chip key={e} label={EQUIPMENT_LABEL[e]} active={equipment === e} onPress={() => setEquipment(e)} />)}
-      </ChipRow>
-      <Text style={styles.dim}>Main muscle</Text>
-      {MUSCLE_REGIONS.map((r) => (
-        <View key={r.label} style={{ gap: 6 }}>
-          <Text style={[styles.dim, { fontSize: 12 }]}>{r.label}</Text>
-          <ChipRow wrap>
-            {r.muscles.map((m) => <Chip key={m} label={MUSCLE_LABEL[m]} active={muscle === m} onPress={() => setMuscle(m)} />)}
-          </ChipRow>
-        </View>
-      ))}
-      <Text style={[styles.dim, { fontSize: 13 }]}>Bar type, pulleys, brand, rest time and the rest can be set later with Edit exercise.</Text>
-      <Button label="Create and add" onPress={create} />
-    </ScrollView>
   );
 }

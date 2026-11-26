@@ -3,7 +3,7 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 /** Small hand-drawn line icons (24×24) used in settings rows. */
 export type IconName =
   | 'play' | 'speaker' | 'bell' | 'calendar' | 'ruler' | 'dumbbell' | 'palette'
-  | 'folder' | 'info' | 'target' | 'person' | 'chevron' | 'search' | 'food' | 'sun' | 'heart' | 'gear' | 'link' | 'pin';
+  | 'folder' | 'info' | 'target' | 'person' | 'chevron' | 'search' | 'food' | 'sun' | 'heart' | 'gear' | 'link' | 'pin' | 'more';
 
 export function Icon({ name, size = 20, color = '#fff' }: { name: IconName; size?: number; color?: string }) {
   const p = { stroke: color, strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, fill: 'none' };
@@ -27,6 +27,7 @@ export function Icon({ name, size = 20, color = '#fff' }: { name: IconName; size
       {name === 'gear' && (<><Circle cx={12} cy={12} r={3} {...p} /><Path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M5.6 18.4l1.6-1.6M16.8 7.2l1.6-1.6" {...p} /><Circle cx={12} cy={12} r={6.5} {...p} /></>)}
       {name === 'link' && (<><Path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" {...p} /><Path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" {...p} /></>)}
       {name === 'pin' && (<><Path d="M12 21s-6.5-6-6.5-11a6.5 6.5 0 0 1 13 0c0 5-6.5 11-6.5 11z" {...p} /><Circle cx={12} cy={10} r={2.3} {...p} /></>)}
+      {name === 'more' && (<><Circle cx={5.5} cy={12} r={1.8} fill={color} /><Circle cx={12} cy={12} r={1.8} fill={color} /><Circle cx={18.5} cy={12} r={1.8} fill={color} /></>)}
       {name === 'search' && (<><Circle cx={10.5} cy={10.5} r={6} {...p} /><Path d="M15 15l5 5" {...p} /></>)}
     </Svg>
   );

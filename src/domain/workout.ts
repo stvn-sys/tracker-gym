@@ -54,3 +54,15 @@ export function formatDuration(ms: number): string {
   const mm = String(m).padStart(h ? 2 : 1, '0');
   return h ? `${h}:${mm}:${String(s).padStart(2, '0')}` : `${mm}:${String(s).padStart(2, '0')}`;
 }
+
+/**
+ * Workout length in minutes/hours only, rounded up to the next minute:
+ * 2m30s → "3min", 2h21m52s → "2h22m", 2h00m00s → "2h".
+ */
+export function formatWorkoutDuration(ms: number): string {
+  const totalMin = Math.max(1, Math.ceil(ms / 60000));
+  if (totalMin < 60) return `${totalMin}min`;
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return m ? `${h}h${m}m` : `${h}h`;
+}

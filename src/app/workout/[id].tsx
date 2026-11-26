@@ -12,7 +12,7 @@ import { useProfile } from '../../components/ProfileContext';
 import { Button, inputStyle, styles } from '../../components/ui';
 import { equipmentDetail } from '../../data/equipment';
 import { formatWeight, fromDisplay, toDisplay } from '../../domain/units';
-import { formatDuration, volumeKg } from '../../domain/workout';
+import { formatDuration } from '../../domain/workout';
 import { listBrands, type Brand } from '../../repo/brands';
 import { setExerciseNotes } from '../../repo/exercises';
 import {
@@ -202,7 +202,6 @@ export default function ActiveWorkout() {
   const letterOf = (sid: string) => String.fromCharCode(65 + Math.max(0, supersetIds.indexOf(sid)));
   const working = we?.sets.filter((s) => !s.isWarmup) ?? [];
   const doneCount = working.filter((s) => s.completedAt).length;
-  const totalVolume = volumeKg(w.exercises.flatMap((e) => e.sets));
 
   return (
     <View style={styles.screen}>
@@ -272,7 +271,7 @@ export default function ActiveWorkout() {
           )}
           <Text style={{ color: colors.text, fontSize: 22, fontWeight: '800' }}>{we.exercise.name}</Text>
           <Text style={styles.dim}>{meta}</Text>
-          <Text style={[styles.dim, { marginTop: 2 }]}>Set {Math.min(doneCount + 1, working.length)} of {working.length} · Volume {formatWeight(totalVolume, unit)}</Text>
+          <Text style={[styles.dim, { marginTop: 2 }]}>Set {Math.min(doneCount + 1, working.length)} of {working.length}</Text>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 12 }}>
             <Action label="Warm-up" onPress={async () => {
