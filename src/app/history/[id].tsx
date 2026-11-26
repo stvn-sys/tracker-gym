@@ -7,7 +7,7 @@ import { RIR_COLORS } from '../../components/NumPad';
 import { useProfile } from '../../components/ProfileContext';
 import { Button, Card, styles } from '../../components/ui';
 import { formatWeight } from '../../domain/units';
-import { bestE1rm, formatWorkoutDuration, volumeKg } from '../../domain/workout';
+import { bestE1rm, formatWorkoutDuration } from '../../domain/workout';
 import { discardWorkout, getWorkout, type WorkoutDetail } from '../../repo/workouts';
 import { colors } from '../../theme/colors';
 
@@ -39,7 +39,6 @@ export default function WorkoutDetailScreen() {
       </Text>
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <Stat label="Duration" value={w.endedAt ? formatWorkoutDuration(w.endedAt - w.startedAt) : 'In progress'} />
-        <Stat label="Volume" value={formatWeight(volumeKg(allSets), unit)} />
         <Stat label="Sets" value={String(allSets.filter((s) => !s.isWarmup && s.completedAt).length)} />
       </View>
 

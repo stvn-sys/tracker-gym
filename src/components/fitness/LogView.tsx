@@ -2,11 +2,9 @@ import { useCallback, useMemo, useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
-import { formatWeight } from '../../domain/units';
 import { formatWorkoutDuration } from '../../domain/workout';
 import { listHistory, type WorkoutSummary } from '../../repo/workouts';
 import { colors } from '../../theme/colors';
-import { useProfile } from '../ProfileContext';
 import { Card, inputStyle, styles } from '../ui';
 
 const dateLabel = (t: number) =>
@@ -15,7 +13,6 @@ const dateLabel = (t: number) =>
 /** All finished workouts. Search matches exercise names, workout names and dates (e.g. "squat", "nov", "2026-11-26"). */
 export function LogView() {
   const db = useSQLiteContext();
-  const { profile } = useProfile();
   const [items, setItems] = useState<WorkoutSummary[]>([]);
   const [query, setQuery] = useState('');
   useFocusEffect(useCallback(() => { listHistory(db).then(setItems); }, [db]));
@@ -48,7 +45,7 @@ export function LogView() {
               </View>
             </View>
             <Text style={{ color: colors.accent }}>
-              {item.endedAt ? formatWorkoutDuration(item.endedAt - item.startedAt) : ''} · {formatWeight(item.volumeKg, profile.unit)} · {item.setCount} {item.setCount === 1 ? 'set' : 'sets'}
+              {item.endedAt ? formatWorkoutDuration(item.endedAt - item.startedAt) : ''} · {item.setCount} {item.setCount === 1 ? 'set' : 'sets'}
             </Text>
             <Text style={styles.dim} numberOfLines={2}>{item.exerciseNames.join(' · ')}</Text>
           </Card>
