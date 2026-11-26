@@ -206,6 +206,7 @@ export default function ExerciseEditor() {
 
       <View style={{ gap: 10, marginTop: 16 }}>
         <Button label={isNew ? 'Create exercise' : 'Save'} onPress={save} />
+        {!isNew && <Button label="View 1RM progress" variant="ghost" onPress={() => router.push({ pathname: '/progress/[id]', params: { id } })} />}
         {!isNew && <Button label="Delete exercise" variant="danger" onPress={remove} />}
       </View>
     </ScrollView>
