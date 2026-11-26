@@ -32,3 +32,15 @@
 - **Recovery score**: sleep (score) + resting HR + HRV vs personal baseline;
   suggests push / normal / take it easy today. Pairs with the sleep score.
 - **Progress photo comparison**: side-by-side or slider between two dates.
+
+## Layout / UX (inspired by another tracker app — ideas only, no copied look)
+- **Date strip** on Today and Nutrition: scrollable days + "Today" button to view
+  and log past/future days.
+- **Macro progress bars** at top of Nutrition: Energy/Protein/Carbs/Fat as
+  "eaten / target" with %.
+- **"Set targets" banner** shown only while nutrition goals aren't set.
+- **Half-width cards**: allow two small cards side by side in the page layouts.
+- **Summary chips on workouts**: exercises, sets, estimated time.
+- **Cardio tracking**: minutes today / this week (Health Connect exercise sessions
+  + manual entry), optional scheduled cardio.
+- **⋯ menu per meal**: copy (to today/another day), save as meal, clear.
