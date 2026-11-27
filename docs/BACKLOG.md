@@ -11,6 +11,10 @@
   focused, Scan button next to it). Manual entry ("Add it myself") becomes a
   button instead of the default view.
 
+## Branding
+- Give the app a slicker name and its own icon (adaptive Android icon + splash).
+  Propose a few name options first; keep the package id so updates still install.
+
 ## Possibly
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
   RestingHeartRate (lowest sustained overnight value). Ask the user first.
