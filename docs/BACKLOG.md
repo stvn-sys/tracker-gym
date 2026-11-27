@@ -1,10 +1,5 @@
 # Backlog — for the next version (do when the user asks for a new version)
 
-## Volume per muscle list
-- Make the whole row tappable (bar and number too, not just the muscle name), with a clear
-  dropdown chevron on every row that has sets, showing the exercises that count.
-- Split the list into Upper body and Lower body sections.
-
 ## Possibly
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
   RestingHeartRate (lowest sustained overnight value). Ask the user first.
@@ -12,8 +7,8 @@
 ## Done in 1.5.0
 Three-level exercise descriptions; typed sets/reps; default rep range per exercise;
 single Superset button; 30 specific muscles (hip flexors, glute medius, tibialis, …) with
-abs/obliques under lower body; new muscle picker with tappable body map; tap a muscle in
-volume per muscle to see which exercises count.
+abs/obliques under lower body; new muscle picker with tappable body map; volume per muscle split into upper/lower with a dropdown on every row showing
+which exercises count.
 
 ## Done in 1.4.0
 Whole-workout time estimate; duplicate exercise; save a logged workout as a routine;
