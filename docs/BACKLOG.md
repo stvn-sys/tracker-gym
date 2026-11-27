@@ -9,6 +9,11 @@
   In lists where space is tight, show the levels on separate lines instead of one
   truncated line (e.g. "Machine · Pin-loaded · Matrix Versa · Stra…" in the routine builder).
 
+## Sets & reps input
+- Sets and reps in the workout builder: tap the number to type it (keep − / + for small steps).
+- Exercise editor: a default rep range (e.g. 8–12) per exercise, used when the exercise
+  is added to a workout (still changeable there).
+
 ## Possibly
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
   RestingHeartRate (lowest sustained overnight value). Ask the user first.
