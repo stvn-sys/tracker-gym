@@ -1,5 +1,10 @@
 # Backlog — for the next version (do when the user asks for a new version)
 
+## Muscle picker
+- Drop the Choose primary / Add secondary switch. One list (and body map):
+  single tap = set as primary, double tap = toggle as secondary.
+  Show a short hint ("Tap = primary · double-tap = secondary").
+
 ## Possibly
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
   RestingHeartRate (lowest sustained overnight value). Ask the user first.
