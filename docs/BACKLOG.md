@@ -1,5 +1,10 @@
 # Backlog — for the next version (do when the user asks for a new version)
 
+## Volume per muscle list
+- Make the whole row tappable (bar and number too, not just the muscle name), with a clear
+  dropdown chevron on every row that has sets, showing the exercises that count.
+- Split the list into Upper body and Lower body sections.
+
 ## Possibly
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
   RestingHeartRate (lowest sustained overnight value). Ask the user first.
