@@ -14,6 +14,10 @@
 - Exercise editor: a default rep range (e.g. 8–12) per exercise, used when the exercise
   is added to a workout (still changeable there).
 
+## Live workout actions
+- Replace "Superset with previous" / "Superset with next" with one "Superset" button that
+  opens a choice: with previous / with next (plus "Unlink superset" when already linked).
+
 ## Possibly
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
   RestingHeartRate (lowest sustained overnight value). Ask the user first.
