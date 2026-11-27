@@ -8,7 +8,7 @@ import { restAlert } from '../../components/alerts';
 import { showAlert } from '../../components/Dialog';
 import { ExercisePicker } from '../../components/ExercisePicker';
 import { estimateFromItems } from '../../components/fitness/WorkoutChips';
-import { clearRest, showRest } from '../../components/restNotify';
+import { clearRest, onRestAction, showRest } from '../../components/restNotify';
 import { NumPad, RIR_COLORS } from '../../components/NumPad';
 import { usePrefs } from '../../components/Prefs';
 import { useProfile } from '../../components/ProfileContext';
@@ -84,6 +84,19 @@ export default function ActiveWorkout() {
   }, []);
 
   const restLeft = rest ? Math.max(0, rest.endsAt - nowMs) : 0;
+  // Buttons on the lock-screen rest notification.
+  const restRef = useRef(rest);
+  const prefsRef = useRef(prefs);
+  useEffect(() => { prefsRef.current = prefs; }, [prefs]);
+  useEffect(() => { restRef.current = rest; }, [rest]);
+  useEffect(() => onRestAction((a) => {
+    const r = restRef.current;
+    if (!r) return;
+    if (a === 'skip') { setRest(null); clearRest(); return; }
+    const next = { endsAt: Math.max(r.endsAt, Date.now()) + 30_000, total: r.total + 30 };
+    setRest(next);
+    showRest(next.endsAt, 'next set', { sound: prefsRef.current.sound, vibrate: prefsRef.current.vibrate });
+  }), []);
   useEffect(() => {
     if (!rest) return;
     const opts = { vibrate: prefs.vibrate, sound: prefs.sound };

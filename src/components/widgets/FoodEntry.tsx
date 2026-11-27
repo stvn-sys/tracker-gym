@@ -3,7 +3,7 @@ import { Pressable, Text } from 'react-native';
 import { FoodSearch } from '../food/FoodSearch';
 import { useSQLiteContext } from 'expo-sqlite';
 import { MEAL_LABEL, type Meal } from '../../domain/meals';
-import { addFood, recentFoods, type FoodInput } from '../../repo/food';
+import { addFood, listFavorites, recentFoods, type FoodInput } from '../../repo/food';
 import { colors } from '../../theme/colors';
 import { EntryModal, num } from '../EntryModal';
 
@@ -11,7 +11,12 @@ import { EntryModal, num } from '../EntryModal';
 export function FoodEntry({ date, meal, onClose, onSaved }: { date: string; meal: Meal | null; onClose: () => void; onSaved: () => void }) {
   const db = useSQLiteContext();
   const [recent, setRecent] = useState<FoodInput[]>([]);
-  useEffect(() => { if (meal) recentFoods(db).then(setRecent); }, [db, meal]);
+  const [favorites, setFavorites] = useState<FoodInput[]>([]);
+  useEffect(() => {
+    if (!meal) return;
+    recentFoods(db).then(setRecent);
+    listFavorites(db).then(setFavorites);
+  }, [db, meal]);
 
   // Opens in the food database search; manual entry is a button there.
   const [manual, setManual] = useState(false);
@@ -26,7 +31,7 @@ export function FoodEntry({ date, meal, onClose, onSaved }: { date: string; meal
 
   const close = () => { setManual(false); setScanFirst(false); onClose(); };
   if (meal && !manual) {
-    return <FoodSearch meal={meal} scan={scanFirst} recent={recent} onAdd={(m, f) => save(f, m)} onClose={close} onManual={() => setManual(true)} />;
+    return <FoodSearch meal={meal} scan={scanFirst} recent={recent} favorites={favorites} onAdd={(m, f) => save(f, m)} onClose={close} onManual={() => setManual(true)} />;
   }
 
   return (

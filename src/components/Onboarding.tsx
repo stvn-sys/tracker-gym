@@ -227,6 +227,8 @@ export function Onboarding() {
             <Group>
               <ToggleRow label="Workout reminder (17:30 on workout days)" value={prefs.remindWorkout.on} onChange={(on) => setPrefs({ remindWorkout: { ...prefs.remindWorkout, on } })} />
               <ToggleRow label="Weigh-in reminder (07:30)" value={prefs.remindWeigh.on} onChange={(on) => setPrefs({ remindWeigh: { ...prefs.remindWeigh, on } })} />
+              <ToggleRow label="Meal logging reminders (9:00 / 13:00 / 19:00)" value={Object.values(prefs.remindMeals).every((m) => m.on)}
+                onChange={(on) => setPrefs({ remindMeals: { breakfast: { ...prefs.remindMeals.breakfast, on }, lunch: { ...prefs.remindMeals.lunch, on }, dinner: { ...prefs.remindMeals.dinner, on } } })} />
               <ToggleRow label="Water reminders (every 2 h)" value={prefs.remindWater.on} onChange={(on) => setPrefs({ remindWater: { ...prefs.remindWater, on } })} />
             </Group>
             <Text style={styles.dim}>Times can be changed in Settings › Reminders.</Text>

@@ -57,3 +57,25 @@ export async function clearMeal(db: SQLiteDatabase, date: string, meal: Meal) {
   const t = now();
   await db.runAsync('UPDATE food_entries SET deleted_at = ?, updated_at = ? WHERE date = ? AND meal = ? AND deleted_at IS NULL', t, t, date, meal);
 }
+
+export async function updateFood(db: SQLiteDatabase, id: string, f: FoodInput) {
+  await db.runAsync('UPDATE food_entries SET name = ?, calories = ?, protein_g = ?, fat_g = ?, carbs_g = ?, updated_at = ? WHERE id = ?',
+    f.name.trim() || 'Quick add', f.calories, f.proteinG, f.fatG, f.carbsG, now(), id);
+}
+
+/** Favorite foods (one-tap add), stored as a JSON list in settings. */
+export async function listFavorites(db: SQLiteDatabase): Promise<FoodInput[]> {
+  const r = await db.getFirstAsync<{ value: string }>("SELECT value FROM settings WHERE key = 'food.favorites'");
+  try { return r ? JSON.parse(r.value) : []; } catch { return []; }
+}
+export async function setFavorites(db: SQLiteDatabase, list: FoodInput[]) {
+  await db.runAsync("INSERT INTO settings (key, value, updated_at) VALUES ('food.favorites', ?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at",
+    JSON.stringify(list), now());
+}
+export async function toggleFavorite(db: SQLiteDatabase, f: FoodInput): Promise<boolean> {
+  const list = await listFavorites(db);
+  const has = list.some((x) => x.name === f.name);
+  const { name, calories, proteinG, fatG, carbsG } = f;
+  await setFavorites(db, has ? list.filter((x) => x.name !== f.name) : [...list, { name, calories, proteinG, fatG, carbsG }]);
+  return !has;
+}

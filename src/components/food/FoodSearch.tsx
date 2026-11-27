@@ -16,12 +16,14 @@ const WEB_NOTE = 'Food search and barcode scanning use the Open Food Facts datab
  * Find a food in Open Food Facts (by name or barcode), choose the amount, and add it.
  * Opens straight into the scanner when `scan` is set.
  */
-export function FoodSearch({ meal: initialMeal, scan, onAdd, onClose, onManual, recent = [] }: {
+export function FoodSearch({ meal: initialMeal, scan, onAdd, onClose, onManual, recent = [], favorites = [] }: {
   meal: Meal; scan?: boolean; onAdd: (meal: Meal, food: FoodInput) => void; onClose: () => void;
   /** Shows an "Add it myself" button that opens manual entry. */
   onManual?: () => void;
   /** Recently logged foods, shown as one-tap chips before searching. */
   recent?: FoodInput[];
+  /** Favorite foods, shown first. */
+  favorites?: FoodInput[];
 }) {
   const keyboard = useKeyboardHeight();
   const [step, setStep] = useState<Step>(scan ? { kind: 'scan' } : { kind: 'search' });
@@ -82,11 +84,11 @@ export function FoodSearch({ meal: initialMeal, scan, onAdd, onClose, onManual, 
                 </Pressable>
               )}
             </View>
-            {!results && recent.length > 0 && (
-              <View style={{ marginHorizontal: 16, marginBottom: 8, gap: 6 }}>
-                <Text style={styles.dim}>Recent — tap to add</Text>
+            {!results && ([['★ Favorites', favorites], ['Recent', recent.filter((r) => !favorites.some((f) => f.name === r.name))]] as const).map(([title, list]) => list.length > 0 && (
+              <View key={title} style={{ marginHorizontal: 16, marginBottom: 8, gap: 6 }}>
+                <Text style={styles.dim}>{title} — tap to add</Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                  {recent.map((r) => (
+                  {list.map((r) => (
                     <Pressable key={r.name} onPress={() => onAdd(meal, r)}
                       style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
                       <Text style={{ color: colors.text, fontSize: 13 }}>{r.name}</Text>
@@ -95,7 +97,7 @@ export function FoodSearch({ meal: initialMeal, scan, onAdd, onClose, onManual, 
                   ))}
                 </View>
               </View>
-            )}
+            ))}
             {busy && <ActivityIndicator color={colors.accent} style={{ marginTop: 16 }} />}
             {error ? <Text style={{ color: colors.textDim, marginHorizontal: 16, lineHeight: 20 }}>{error}</Text> : null}
             <FlatList

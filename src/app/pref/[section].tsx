@@ -308,6 +308,18 @@ function RemindersSection() {
         <ToggleRow label="Morning weigh-in" value={b.on} onChange={(v) => (v ? turnOn({ remindWeigh: { ...b, on: true } }) : setPrefs({ remindWeigh: { ...b, on: false } }))} />
         {b.on && <TimeRow label="Time" hour={b.hour} minute={b.minute} onChange={(hh, mm) => setPrefs({ remindWeigh: { ...b, hour: hh, minute: mm } })} />}
       </Group>
+      <Group title="Meals" footer="Skipped for today once you have logged that meal.">
+        {(['breakfast', 'lunch', 'dinner'] as const).map((k) => {
+          const r = prefs.remindMeals[k];
+          const put = (v: typeof r) => setPrefs({ remindMeals: { ...prefs.remindMeals, [k]: v } });
+          return (
+            <View key={k}>
+              <ToggleRow label={k[0].toUpperCase() + k.slice(1)} value={r.on} onChange={(v) => (v ? turnOn({ remindMeals: { ...prefs.remindMeals, [k]: { ...r, on: true } } }) : put({ ...r, on: false }))} />
+              {r.on && <TimeRow label="Time" hour={r.hour} minute={r.minute} onChange={(hh, mm) => put({ ...r, hour: hh, minute: mm })} />}
+            </View>
+          );
+        })}
+      </Group>
       <Group title="Water">
         <ToggleRow label="Drink reminders" value={h.on} onChange={(v) => (v ? turnOn({ remindWater: { ...h, on: true } }) : setPrefs({ remindWater: { ...h, on: false } }))} />
         {h.on && (

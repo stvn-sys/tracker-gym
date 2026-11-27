@@ -3,7 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import { showAlert } from '../Dialog';
 import { useSQLiteContext } from 'expo-sqlite';
 import { localDate, mealForTime, MEAL_LABEL, MEALS, sumMacros, type Meal } from '../../domain/meals';
-import { clearMeal, copyFood, deleteFood, foodForDate } from '../../repo/food';
+import { clearMeal, copyFood, deleteFood, foodForDate, listFavorites, toggleFavorite, updateFood, type FoodEntry as LoggedFood } from '../../repo/food';
 import { saveRecipe } from '../../repo/recipes';
 import { EntryModal } from '../EntryModal';
 import { Icon } from '../Icon';
@@ -23,6 +23,17 @@ export function NutritionCard({ date }: { date: string }) {
   const [food, bump] = useLoad(() => foodForDate(db, date), [db, date]);
 
   const [saveFor, setSaveFor] = useState<Meal | null>(null);
+  const [editing, setEditing] = useState<LoggedFood | null>(null);
+  const [favs, bumpFavs] = useLoad(() => listFavorites(db), [db]);
+  const itemMenu = (f: LoggedFood) => {
+    const fav = (favs ?? []).some((x) => x.name === f.name);
+    showAlert(f.name, `${Math.round(f.calories)} kcal · P ${Math.round(f.proteinG)} · F ${Math.round(f.fatG)} · C ${Math.round(f.carbsG)}`, [
+      { text: 'Edit amount', onPress: () => setEditing(f) },
+      { text: fav ? 'Remove from favorites' : '★ Add to favorites', onPress: async () => { await toggleFavorite(db, f); bumpFavs(); } },
+      { text: 'Delete', style: 'destructive', onPress: async () => { await deleteFood(db, f.id); bump(); } },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
   const shift = (days: number) => {
     const [y, mo, d] = date.split('-').map(Number);
     return localDate(new Date(y, mo - 1, d), days);
@@ -89,8 +100,8 @@ export function NutritionCard({ date }: { date: string }) {
               </Pressable>
             </View>
             {isOpen && items.map((f) => (
-              <Pressable key={f.id} onLongPress={() => remove(f.id, f.name)} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingLeft: 8 }}>
-                <Text style={{ color: colors.text, flex: 1 }} numberOfLines={1}>{f.name}</Text>
+              <Pressable key={f.id} onPress={() => itemMenu(f)} onLongPress={() => remove(f.id, f.name)} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingLeft: 8 }}>
+                <Text style={{ color: colors.text, flex: 1 }} numberOfLines={1}>{(favs ?? []).some((x) => x.name === f.name) ? '★ ' : ''}{f.name}</Text>
                 <Text style={styles.dim}>
                   {Math.round(f.calories)} kcal · P{Math.round(f.proteinG)} F{Math.round(f.fatG)} C{Math.round(f.carbsG)}
                 </Text>
@@ -99,7 +110,7 @@ export function NutritionCard({ date }: { date: string }) {
           </View>
         );
       })}
-      {(food?.length ?? 0) > 0 && <Text style={[styles.dim, { fontSize: 12, textAlign: 'center' }]}>Tap a meal to see its foods · long-press a food to delete it</Text>}
+      {(food?.length ?? 0) > 0 && <Text style={[styles.dim, { fontSize: 12, textAlign: 'center' }]}>Tap a meal to see its foods · tap a food to edit, favorite or delete it</Text>}
       <EntryModal
         visible={saveFor != null}
         title="Save as meal"
@@ -111,6 +122,29 @@ export function NutritionCard({ date }: { date: string }) {
           setSaveFor(null);
           bump();
           showAlert('Saved', 'Find it under Saved meals & recipes to log it in one tap.');
+        }}
+      />
+      <EntryModal
+        visible={editing != null}
+        title={editing ? `Edit ${editing.name}` : ''}
+        fields={editing ? [
+          { key: 'x', label: 'Amount (× what you logged, e.g. 1.5 or 0.5)', numeric: true, initial: '1' },
+          { key: 'kcal', label: 'Calories (kcal)', numeric: true, initial: String(Math.round(editing.calories)) },
+          { key: 'p', label: 'Protein (g)', numeric: true, initial: String(Math.round(editing.proteinG * 10) / 10) },
+          { key: 'f', label: 'Fat (g)', numeric: true, initial: String(Math.round(editing.fatG * 10) / 10) },
+          { key: 'c', label: 'Carbs (g)', numeric: true, initial: String(Math.round(editing.carbsG * 10) / 10) },
+        ] : []}
+        onClose={() => setEditing(null)}
+        onSave={async (v) => {
+          if (!editing) return;
+          const n = (k: string) => { const x = parseFloat((v[k] ?? '').replace(',', '.')); return Number.isFinite(x) && x >= 0 ? x : null; };
+          const x = n('x') ?? 1;
+          await updateFood(db, editing.id, {
+            name: editing.name, calories: (n('kcal') ?? editing.calories) * x,
+            proteinG: (n('p') ?? editing.proteinG) * x, fatG: (n('f') ?? editing.fatG) * x, carbsG: (n('c') ?? editing.carbsG) * x,
+          });
+          setEditing(null);
+          bump();
         }}
       />
       <FoodEntry date={date} meal={meal} onClose={() => setMeal(null)} onSaved={() => { setMeal(null); bump(); }} />

@@ -11,6 +11,7 @@ export default function ExerciseEditorScreen() {
         id={isNew ? null : id}
         onSaved={() => router.back()}
         onDeleted={() => router.back()}
+        onDuplicated={(nid) => router.replace({ pathname: '/exercise/[id]', params: { id: nid } })}
         onViewProgress={isNew ? undefined : () => router.push({ pathname: '/progress/[id]', params: { id } })}
       />
     </>

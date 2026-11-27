@@ -29,7 +29,7 @@ export function ReminderSync() {
   const db = useSQLiteContext();
   const { prefs } = usePrefs();
   const { version } = useDataVersion();
-  const { remindWorkout, remindWeigh, remindWater } = prefs;
+  const { remindWorkout, remindWeigh, remindWater, remindMeals } = prefs;
 
   useEffect(() => {
     if (Platform.OS === 'web') return;
@@ -38,7 +38,8 @@ export function ReminderSync() {
       for (const n of await Notifications.getAllScheduledNotificationsAsync()) {
         if (!n.identifier.startsWith('rest-')) await Notifications.cancelScheduledNotificationAsync(n.identifier);
       }
-      if (!remindWorkout.on && !remindWeigh.on && !remindWater.on) return;
+      const mealsOn = Object.values(remindMeals).some((m) => m.on);
+      if (!remindWorkout.on && !remindWeigh.on && !remindWater.on && !mealsOn) return;
       if (!(await ensureNotificationPermission()) || cancelled) return;
       if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('reminders', { name: 'Reminders', importance: 3 /* AndroidImportance.DEFAULT */ });
@@ -68,9 +69,28 @@ export function ReminderSync() {
           });
         }
       }
+      if (mealsOn) {
+        // One-off reminders for the next 7 days, so today's is skipped once that meal is logged.
+        const today = new Date();
+        const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const logged = new Set((await db.getAllAsync<{ meal: string }>(
+          'SELECT DISTINCT meal FROM food_entries WHERE date = ? AND deleted_at IS NULL', iso(today))).map((r) => r.meal));
+        const label = { breakfast: 'breakfast', lunch: 'lunch', dinner: 'dinner' } as const;
+        for (let d = 0; d < 7; d++) {
+          for (const [meal, r] of Object.entries(remindMeals) as [keyof typeof label, { on: boolean; hour: number; minute: number }][]) {
+            if (!r.on) continue;
+            const at = new Date(today.getFullYear(), today.getMonth(), today.getDate() + d, r.hour, r.minute);
+            if (at.getTime() <= Date.now() || (d === 0 && logged.has(meal))) continue;
+            await Notifications.scheduleNotificationAsync({
+              content: { title: `Log your ${label[meal]}`, body: 'Tap to add what you ate.' },
+              trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: at, channelId },
+            });
+          }
+        }
+      }
     })().catch(() => {});
     return () => { cancelled = true; };
-  }, [db, version, remindWorkout, remindWeigh, remindWater]);
+  }, [db, version, remindWorkout, remindWeigh, remindWater, remindMeals]);
 
   return null;
 }

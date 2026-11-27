@@ -56,10 +56,12 @@ interface Props {
   onDeleted?: () => void;
   /** Shows a "View progress" button when given. */
   onViewProgress?: () => void;
+  /** Called with the new id after "Duplicate". */
+  onDuplicated?: (id: string) => void;
 }
 
 /** The full create/edit exercise form, used by the library and the exercise picker. */
-export function ExerciseForm({ id, initialName = '', initialEquipment = null, onSaved, onDeleted, onViewProgress }: Props) {
+export function ExerciseForm({ id, initialName = '', initialEquipment = null, onSaved, onDeleted, onViewProgress, onDuplicated }: Props) {
   const isNew = id == null;
   const db = useSQLiteContext();
   const { profile } = useProfile();
@@ -326,6 +328,12 @@ export function ExerciseForm({ id, initialName = '', initialEquipment = null, on
       <View style={{ gap: 10, marginTop: 16 }}>
         <Button label={isNew ? 'Create exercise' : 'Save'} onPress={save} />
         {!isNew && onViewProgress && <Button label="View progress" variant="ghost" onPress={onViewProgress} />}
+        {!isNew && onDuplicated && (
+          <Button label="Duplicate" variant="ghost" onPress={async () => {
+            const copy = await createExercise(db, { ...form, name: `${form.name.trim()} (copy)` });
+            onDuplicated(copy);
+          }} />
+        )}
         {!isNew && <Button label="Delete exercise" variant="danger" onPress={remove} />}
       </View>
     </ScrollView>

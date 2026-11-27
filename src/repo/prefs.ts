@@ -46,6 +46,7 @@ export interface Prefs {
   remindWorkout: { on: boolean; hour: number; minute: number };
   remindWeigh: { on: boolean; hour: number; minute: number };
   remindWater: { on: boolean; everyHours: number; from: number; to: number };
+  remindMeals: Record<'breakfast' | 'lunch' | 'dinner', { on: boolean; hour: number; minute: number }>;
 }
 
 export const DEFAULT_PREFS: Prefs = {
@@ -66,6 +67,9 @@ export const DEFAULT_PREFS: Prefs = {
   remindWorkout: { on: false, hour: 17, minute: 30 },
   remindWeigh: { on: false, hour: 7, minute: 30 },
   remindWater: { on: false, everyHours: 2, from: 9, to: 21 },
+  remindMeals: {
+    breakfast: { on: false, hour: 9, minute: 0 }, lunch: { on: false, hour: 13, minute: 0 }, dinner: { on: false, hour: 19, minute: 0 },
+  },
 };
 
 export async function loadPrefs(db: SQLiteDatabase): Promise<Prefs> {

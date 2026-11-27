@@ -26,7 +26,7 @@ export default function Settings() {
   const [bw] = useLoad(() => latestBodyweightKg(db), [db]);
 
   const rest = `${Math.floor(profile.restSeconds / 60)}:${String(profile.restSeconds % 60).padStart(2, '0')}`;
-  const reminders = [prefs.remindWorkout.on && 'Workout', prefs.remindWeigh.on && 'Weigh-in', prefs.remindWater.on && 'Water'].filter(Boolean);
+  const reminders = [prefs.remindWorkout.on && 'Workout', prefs.remindWeigh.on && 'Weigh-in', prefs.remindWater.on && 'Water', Object.values(prefs.remindMeals).some((m) => m.on) && 'Meals'].filter(Boolean);
   const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
   const groups: RowDef[][] = [

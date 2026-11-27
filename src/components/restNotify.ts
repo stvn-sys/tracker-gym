@@ -8,6 +8,7 @@ import { ensureNotificationPermission } from './Reminders';
 
 export const REST_IDS = ['rest-now', 'rest-end'];
 let channelReady = false;
+let categoryReady = false;
 
 export async function showRest(endsAt: number, exercise: string, alert: { sound: boolean; vibrate: boolean }) {
   if (Platform.OS === 'web') return;
@@ -18,11 +19,18 @@ export async function showRest(endsAt: number, exercise: string, alert: { sound:
       await Notifications.setNotificationChannelAsync('rest-live', { name: 'Rest timer (ongoing)', importance: 2 /* LOW: silent */ });
       channelReady = true;
     }
+    if (!categoryReady) {
+      await Notifications.setNotificationCategoryAsync('rest', [
+        { identifier: 'rest-skip', buttonTitle: 'Skip rest', options: { opensAppToForeground: false } },
+        { identifier: 'rest-add30', buttonTitle: '+30 s', options: { opensAppToForeground: false } },
+      ]);
+      categoryReady = true;
+    }
     await clearRest();
     const until = new Date(endsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     await Notifications.scheduleNotificationAsync({
       identifier: 'rest-now',
-      content: { title: `Resting until ${until}`, body: `Next: ${exercise}`, sticky: true, autoDismiss: false },
+      content: { title: `Resting until ${until}`, body: `Next: ${exercise}`, sticky: true, autoDismiss: false, categoryIdentifier: 'rest' },
       trigger: Platform.OS === 'android' ? { channelId: 'rest-live' } : null,
     });
     const seconds = Math.max(1, Math.round((endsAt - Date.now()) / 1000));
@@ -42,4 +50,14 @@ export async function clearRest() {
       await Notifications.dismissNotificationAsync(id);
     }
   } catch { /* ignore */ }
+}
+
+/** Calls back when "Skip rest" or "+30 s" is tapped on the rest notification. */
+export function onRestAction(cb: (action: 'skip' | 'add30') => void) {
+  if (Platform.OS === 'web') return () => {};
+  const sub = Notifications.addNotificationResponseReceivedListener((r) => {
+    if (r.actionIdentifier === 'rest-skip') cb('skip');
+    else if (r.actionIdentifier === 'rest-add30') cb('add30');
+  });
+  return () => sub.remove();
 }

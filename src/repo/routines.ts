@@ -209,3 +209,27 @@ export async function nextInRotation(db: SQLiteDatabase): Promise<Routine | null
 
 /** "8–12" for a range, "8" for a single target. */
 export const repsLabel = (min: number, max: number | null | undefined) => (max && max > min ? `${min}–${max}` : `${min}`);
+
+/**
+ * Turns a logged workout into a routine workout: same exercises, order, supersets,
+ * set counts and the rep range you did. Exercises deleted from the library since
+ * then are brought back. Goes into the active routine (one is created if needed).
+ */
+export async function routineFromWorkout(db: SQLiteDatabase, w: { name: string; exercises: { exercise: { id: string }; supersetId: string | null; sets: { reps: number | null; isWarmup: boolean; completedAt: number | null }[] }[] }) {
+  const t = now();
+  const group = await db.getFirstAsync<{ id: string }>('SELECT id FROM routine_groups WHERE deleted_at IS NULL ORDER BY is_active DESC, position LIMIT 1');
+  const groupId = group?.id ?? await createGroup(db, 'My routine');
+  const exercises = w.exercises.map((e) => {
+    const done = e.sets.filter((s) => !s.isWarmup && s.reps != null);
+    const reps = done.map((s) => s.reps!).filter((r) => r > 0);
+    return {
+      exerciseId: e.exercise.id,
+      targetSets: Math.max(1, done.length),
+      targetReps: reps.length ? Math.min(...reps) : 8,
+      targetRepsMax: reps.length ? Math.max(...reps) : 12,
+      supersetId: e.supersetId,
+    };
+  });
+  for (const e of exercises) await db.runAsync('UPDATE exercises SET deleted_at = NULL, updated_at = ? WHERE id = ?', t, e.exerciseId);
+  return createRoutine(db, { groupId, name: w.name, weekdays: [], exercises });
+}

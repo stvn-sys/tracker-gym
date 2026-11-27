@@ -10,6 +10,7 @@ import { formatWeight } from '../../domain/units';
 import { loadMode, type LoadMode } from '../../data/equipment';
 import { bestE1rm, formatWorkoutDuration } from '../../domain/workout';
 import { discardWorkout, getWorkout, type WorkoutDetail } from '../../repo/workouts';
+import { routineFromWorkout } from '../../repo/routines';
 import { colors } from '../../theme/colors';
 
 export default function WorkoutDetailScreen() {
@@ -67,6 +68,13 @@ export default function WorkoutDetailScreen() {
       })}
 
       <View style={{ marginTop: 16 }}>
+        <Button label="Save as routine workout" variant="ghost" onPress={async () => {
+          const rid = await routineFromWorkout(db, w);
+          showAlert('Added to your routine', `"${w.name}" is now a workout you can start again or edit.`, [
+            { text: 'OK' }, { text: 'Edit it', onPress: () => router.push({ pathname: '/routine/[id]', params: { id: rid } }) },
+          ]);
+        }} />
+        <View style={{ height: 10 }} />
         <Button label="Delete workout" variant="danger" onPress={remove} />
       </View>
     </ScrollView>
