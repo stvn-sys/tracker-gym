@@ -18,6 +18,18 @@
 - Replace "Superset with previous" / "Superset with next" with one "Superset" button that
   opens a choice: with previous / with next (plus "Unlink superset" when already linked).
 
+## Muscles
+- More specific muscle groups, e.g. chest: upper / mid / lower; lats; traps: upper / mid-lower;
+  rhomboids; teres major; delts: front / side / rear; biceps (long/short head), brachialis;
+  triceps (long / lateral-medial); forearm flexors / extensors; abs (upper/lower), obliques,
+  lower back (erectors); glutes: max / medius; quads (rectus femoris / vastus); hamstrings;
+  adductors; abductors; calves: gastrocnemius / soleus; tibialis; neck. Migrate existing
+  exercises to the closest new muscle; keep the body map and volume per muscle working
+  (sub-muscles roll up to their group).
+- Redesign the primary/secondary muscle picker: grouped by body region with the body map
+  (tap a muscle on the front/back figure to select it), clear primary vs secondary styling,
+  search, and a summary of what's selected.
+
 ## Possibly
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
   RestingHeartRate (lowest sustained overnight value). Ask the user first.
