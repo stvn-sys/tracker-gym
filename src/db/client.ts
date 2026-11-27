@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import { MIGRATIONS } from './schema';
-import { seedIfEmpty, seedV2, seedV4 } from './seed';
+import { seedIfEmpty, seedV2, seedV4, seedV5 } from './seed';
 
 export const DB_NAME = 'tracker-gym.db';
 
@@ -20,4 +20,5 @@ export async function initDatabase(db: SQLiteDatabase) {
   await seedIfEmpty(db);
   await seedV2(db);
   await seedV4(db);
+  await seedV5(db);
 }

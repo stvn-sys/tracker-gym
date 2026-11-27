@@ -73,7 +73,7 @@ function ProfileSection() {
   useEffect(() => { latestBodyweightKg(db).then(setBw); }, [db]);
   return (
     <>
-      <Group footer="Gender, age and weight are used to rank your lifts against strength standards.">
+      <Group footer="Used to suggest calorie and macro targets.">
         <FieldRow label="Name">
           <CommitInput initial={prefs.name} onCommit={(t) => setPrefs({ name: t.trim() })}
             placeholder="Optional" placeholderTextColor={colors.textDim} style={[smallInput, { width: 160 }]} />
@@ -93,6 +93,11 @@ function ProfileSection() {
                 bump();
               }} />
           )}
+        </FieldRow>
+        <FieldRow label={`Height (${prefs.lengthUnit})`}>
+          <CommitInput initial={prefs.heightCm == null ? '' : String(Math.round((prefs.lengthUnit === 'in' ? prefs.heightCm / 2.54 : prefs.heightCm) * 10) / 10)} keyboardType="decimal-pad"
+            placeholder="e.g. 180" placeholderTextColor={colors.textDim} style={smallInput}
+            onCommit={(t) => { const v = parseFloat(t.replace(',', '.')); setPrefs({ heightCm: Number.isFinite(v) && v > 0 ? (prefs.lengthUnit === 'in' ? v * 2.54 : v) : null }); }} />
         </FieldRow>
         <FieldRow label="Age">
           <CommitInput initial={profile.age?.toString() ?? ''} keyboardType="number-pad" placeholder="e.g. 30" placeholderTextColor={colors.textDim}
@@ -437,6 +442,7 @@ function LookSection() {
 
 function DataSection() {
   const db = useSQLiteContext();
+  const { setPrefs } = usePrefs();
   const { bump } = useDataVersion();
   const [withPhotos, setWithPhotos] = useState(false);
   const [paste, setPaste] = useState('');
@@ -480,6 +486,9 @@ function DataSection() {
           {!web && <Button label="Paste from clipboard" variant="ghost" onPress={async () => setPaste(await Clipboard.getStringAsync())} />}
           <Button label="Restore backup" onPress={doImport} />
         </View>
+      </Group>
+      <Group title="Setup" footer="Walk through the first-launch questions again (targets, gym, equipment). Your data is kept.">
+        <View style={{ padding: 12 }}><Button label="Run setup again" variant="ghost" onPress={() => setPrefs({ onboarded: false })} /></View>
       </Group>
       <Group title="Danger zone">
         <Pressable onPress={doReset} style={{ paddingHorizontal: 16, paddingVertical: 14 }}><Text style={{ color: colors.danger, fontSize: 17 }}>Delete all data</Text></Pressable>

@@ -9,6 +9,7 @@ import { PrefsProvider, usePrefs } from '../components/Prefs';
 import { ProfileProvider } from '../components/ProfileContext';
 import { ReminderSync } from '../components/Reminders';
 import { AutoMacrosSync, HealthSync } from '../components/HealthSync';
+import { Onboarding } from '../components/Onboarding';
 import { DB_NAME, initDatabase } from '../db/client';
 import { colors } from '../theme/colors';
 
@@ -21,6 +22,7 @@ function ThemedApp() {
       <StatusBar style="light" />
       {/* Lifts every screen above the keyboard so the focused field stays visible. */}
       <View style={{ flex: 1, paddingBottom: keyboard, backgroundColor: colors.bg }}>
+      {!prefs.onboarded ? <Onboarding /> : (
       <Stack
         screenOptions={{
           headerStyle: { backgroundColor: colors.bg },
@@ -32,6 +34,7 @@ function ThemedApp() {
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
+      )}
       </View>
       <DialogHost />
       <ReminderSync />

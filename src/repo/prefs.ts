@@ -6,6 +6,10 @@ import { getJSON, setJSON } from './kv';
 /** App preferences (Settings). Stored as one JSON value under "prefs". */
 export interface Prefs {
   name: string;
+  // First-launch questionnaire done
+  onboarded: boolean;
+  heightCm: number | null;
+  activity: 'sedentary' | 'light' | 'moderate' | 'very';
   // Workout
   autoRest: boolean;        // start the rest timer when a set is checked
   prefill: boolean;         // pre-fill weight/reps from the last session
@@ -46,6 +50,7 @@ export interface Prefs {
 
 export const DEFAULT_PREFS: Prefs = {
   name: '',
+  onboarded: false, heightCm: null, activity: 'moderate',
   autoRest: true, prefill: true, keepAwake: true,
   vibrate: true, sound: false, warn10: false,
   schedule: 'weekdays', weekStart: 1,

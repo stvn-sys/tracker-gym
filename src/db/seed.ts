@@ -10,7 +10,7 @@ const setFlag = (db: SQLiteDatabase, key: string) =>
 /** First launch: nothing premade; you build your own library and routines. */
 export async function seedIfEmpty(db: SQLiteDatabase) {
   if (await flag(db, 'seeded')) return;
-  for (const f of ['seeded', 'seededV3', 'seededPlan', 'seededV4']) await setFlag(db, f);
+  for (const f of ['seeded', 'seededV3', 'seededPlan', 'seededV4', 'seededV5']) await setFlag(db, f);
 }
 
 /** Default water bottles (added once, editable). */
@@ -44,4 +44,24 @@ export async function seedV4(db: SQLiteDatabase) {
     await setJSON(db, 'prefs', { ...prefs, attachments: undefined, attachmentsByEq: {} });
     await setFlag(db, 'seededV4');
   });
+}
+
+/**
+ * Version 1.3: wipe personalization so the new setup questionnaire starts fresh.
+ * Removed: settings (preferences, goals, layouts, profile), exercises, routines,
+ * machine brands, water bottles (back to defaults). Kept: everything you logged
+ * (workouts and their exercise names, food, saved meals, weight, health, photos).
+ */
+export async function seedV5(db: SQLiteDatabase) {
+  if (await flag(db, 'seededV5')) return;
+  await db.withTransactionAsync(async () => {
+    const t = now();
+    await db.runAsync("DELETE FROM settings WHERE key NOT LIKE 'seeded%'");
+    for (const table of ['exercises', 'routine_groups', 'routines', 'routine_exercises', 'machine_series', 'machine_brands', 'water_bottles']) {
+      await db.runAsync(`UPDATE ${table} SET deleted_at = ?, updated_at = ? WHERE deleted_at IS NULL`, t, t);
+    }
+    await db.runAsync("DELETE FROM settings WHERE key = 'seededV2'"); // re-adds the default water bottles
+    await setFlag(db, 'seededV5');
+  });
+  await seedV2(db);
 }

@@ -4,6 +4,11 @@
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
   RestingHeartRate (lowest sustained overnight value). Ask the user first.
 
+## Done in 1.3.0
+Machines pin/plate-loaded; Other brand/series; mini plates 1.25/2.5/custom; starting weight
+per exercise and bar weights; rhomboids instead of upper back; estimated workout time;
+unilateral in descriptions; first-launch questionnaire; personalization reset.
+
 ## Done in 1.2.0
 Ranks removed; food entry opens in database search; renamed to Kinetic with new icon;
 premade exercises, routines, machine brands and attachments removed.
