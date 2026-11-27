@@ -1,5 +1,14 @@
 # Backlog — for the next version (do when the user asks for a new version)
 
+## Exercise description layout
+- Text under an exercise (builder, library, picker, live workout) as three levels:
+  1. Equipment: "Machine · Pin-loaded" / "Machine · Plate-loaded" / "Cable" / "Bar"
+  2. Sub-equipment: brand + series ("Matrix Versa"), pulleys ("1 pulley"), bar type,
+     unilateral
+  3. Attachment ("Cuff", "Strap")
+  In lists where space is tight, show the levels on separate lines instead of one
+  truncated line (e.g. "Machine · Pin-loaded · Matrix Versa · Stra…" in the routine builder).
+
 ## Possibly
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
   RestingHeartRate (lowest sustained overnight value). Ask the user first.
