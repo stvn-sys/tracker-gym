@@ -1,5 +1,5 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
-import { BAR_TYPES, EQUIPMENT, type Equipment } from '../data/equipment';
+import { BAR_TYPES, BAR_WEIGHTS_KG, EQUIPMENT, type Equipment } from '../data/equipment';
 import type { Accent, ThemeName } from '../theme/colors';
 import { getJSON, setJSON } from './kv';
 
@@ -27,6 +27,8 @@ export interface Prefs {
   attachmentsByEq: Partial<Record<Equipment, string[]>>;
   // Bar types for the Bar equipment (editable)
   barTypes: string[];
+  // Empty weight per bar type (kg), used as the starting weight
+  barWeights: Record<string, number>;
   // Gym locations (editable in Settings); asked for when starting a workout
   gyms: string[];
   // Android Health Connect sync
@@ -51,6 +53,7 @@ export const DEFAULT_PREFS: Prefs = {
   equipment: [...EQUIPMENT],
   attachmentsByEq: {},
   barTypes: [...BAR_TYPES],
+  barWeights: { ...BAR_WEIGHTS_KG },
   gyms: [],
   healthConnect: { enabled: false, lastSync: null },
   autoMacros: { on: false, rateKgWeek: 0, lastRun: null, tdee: null, slopeKgWeek: null },

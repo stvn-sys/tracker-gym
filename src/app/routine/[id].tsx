@@ -6,6 +6,8 @@ import { showAlert } from '../../components/Dialog';
 import { ExercisePicker } from '../../components/ExercisePicker';
 import { Icon } from '../../components/Icon';
 import { usePrefs } from '../../components/Prefs';
+import { estimateFromItems } from '../../components/fitness/WorkoutChips';
+import { useProfile } from '../../components/ProfileContext';
 import { Button, Card, inputStyle, SectionTitle, styles } from '../../components/ui';
 import { equipmentDetail } from '../../data/equipment';
 import { listBrands, type Brand } from '../../repo/brands';
@@ -24,6 +26,7 @@ export default function WorkoutEditor() {
   const isNew = id === 'new';
   const db = useSQLiteContext();
   const { prefs } = usePrefs();
+  const { profile } = useProfile();
   const [name, setName] = useState('');
   const [weekdays, setWeekdays] = useState<number[]>([]);
   const [items, setItems] = useState<Item[]>([]);
@@ -125,6 +128,13 @@ export default function WorkoutEditor() {
       </View>
 
       <SectionTitle>Exercises</SectionTitle>
+      {items.length > 0 && (
+        <Text style={styles.dim}>
+          {items.length} exercises · {items.reduce((a, it) => a + it.targetSets, 0)} sets · estimated ~{estimateFromItems(items.map((it) => ({
+            sets: it.targetSets, rest: exercises.get(it.exerciseId)?.restSeconds ?? profile.restSeconds,
+          })))} min
+        </Text>
+      )}
       {items.map((it, i) => {
         const ex = exercises.get(it.exerciseId);
         return (

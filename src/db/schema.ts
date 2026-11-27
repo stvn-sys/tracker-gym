@@ -263,4 +263,11 @@ export const MIGRATIONS: string[] = [
   );
   CREATE INDEX idx_cardio_date ON cardio_sessions(date);
   `,
+  // 10: machine loading type + starting weight; "upper back" became rhomboids
+  `
+  ALTER TABLE exercises ADD COLUMN machine_load TEXT;
+  ALTER TABLE exercises ADD COLUMN start_weight_kg REAL;
+  UPDATE exercises SET primary_muscle = 'rhomboids' WHERE primary_muscle = 'upper_back';
+  UPDATE exercises SET secondary_muscles = REPLACE(secondary_muscles, '"upper_back"', '"rhomboids"');
+  `,
 ];

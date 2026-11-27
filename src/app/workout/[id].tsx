@@ -7,6 +7,7 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { restAlert } from '../../components/alerts';
 import { showAlert } from '../../components/Dialog';
 import { ExercisePicker } from '../../components/ExercisePicker';
+import { estimateFromItems } from '../../components/fitness/WorkoutChips';
 import { clearRest, showRest } from '../../components/restNotify';
 import { NumPad, RIR_COLORS } from '../../components/NumPad';
 import { usePrefs } from '../../components/Prefs';
@@ -237,9 +238,9 @@ export default function ActiveWorkout() {
     : [];
 
   const plateText = (() => {
-    if (!selWe || sel?.field !== 'weight' || selWe.exercise.equipment !== 'barbell' || selectedSet?.weightKg == null) return null;
+    if (!selWe || sel?.field !== 'weight' || (selWe.exercise.equipment !== 'barbell' && selWe.exercise.equipment !== 'smith') || selectedSet?.weightKg == null) return null;
     const r2 = (n: number) => Math.round(n * 100) / 100;
-    const bar = r2(toDisplay(barWeightKg(selWe.exercise.barType), unit));
+    const bar = r2(toDisplay(selWe.exercise.startWeightKg ?? barWeightKg(selWe.exercise.barType), unit));
     const total = r2(toDisplay(selectedSet.weightKg, unit));
     if (bar === 0) return null;
     const r = platesPerSide(total, bar, unit === 'kg' ? PLATES_KG : PLATES_LBS);
@@ -248,6 +249,10 @@ export default function ActiveWorkout() {
     return `Per side: ${side}${r.rest ? ` (+${r.rest} ${unit} left over)` : ''} · bar ${bar} ${unit}`;
   })();
 
+  const remaining = estimateFromItems(w.exercises.map((e) => ({
+    sets: e.sets.filter((x) => !x.completedAt && !x.isWarmup).length, rest: restFor(e),
+  })).filter((x) => x.sets > 0));
+  const anyLeft = w.exercises.some((e) => e.sets.some((x) => !x.completedAt && !x.isWarmup));
   const title = [w.name, w.gym, formatDuration(nowMs - w.startedAt)].filter(Boolean).join(' · ');
   const isLastPage = pageIdx >= pages.length - 1;
 
@@ -311,6 +316,7 @@ export default function ActiveWorkout() {
         <View style={styles.content}><Text style={styles.dim}>No exercises yet. Tap + to add one.</Text></View>
       ) : (
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24, gap: 18 }} keyboardShouldPersistTaps="handled">
+          {anyLeft && <Text style={[styles.dim, { fontSize: 12 }]}>About {remaining} min left</Text>}
           {members.length > 1 && (
             <Text style={{ color: colors.accent, fontWeight: '800', fontSize: 12, letterSpacing: 0.5 }}>
               SUPERSET {letterOf(members[0].supersetId!)} · one set of each, then rest
@@ -327,7 +333,7 @@ export default function ActiveWorkout() {
                 unit={unit}
                 meta={(() => {
                   const l = equipmentLines(we.exercise, brands);
-                  return [[l.equipment, we.exercise.laterality === 'unilateral' ? 'Unilateral' : null].filter(Boolean).join(' · '), l.sub, l.attachment].filter((x): x is string => !!x);
+                  return [l.equipment, l.sub, l.attachment].filter((x): x is string => !!x);
                 })()}
                 sel={sel}
                 onSelect={select}

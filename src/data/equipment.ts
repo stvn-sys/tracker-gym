@@ -21,9 +21,7 @@ export const DEFAULT_INCREMENT_KG: Record<Equipment, number> = {
 };
 
 /** Default add-on plates (kg) you can hang on a stack for small jumps. */
-export const DEFAULT_ADDON_PLATES_KG: Partial<Record<Equipment, number[]>> = {
-  cable: [1.25, 2.5], machine: [1.25, 2.5],
-};
+export const DEFAULT_ADDON_PLATES_KG: Partial<Record<Equipment, number[]>> = {};
 
 export const isCable = (e: Equipment) => e === 'cable';
 export const isMachine = (e: Equipment) => e === 'machine';
@@ -38,8 +36,12 @@ export const PULLEY_OPTIONS = [1, 2, 3, 4] as const;
 /** Pulleys only apply to cables. Attachments are per equipment type (Settings). */
 export const supportsPulleys = isCable;
 export const supportsAttachment = supportsPulleys;
-/** Add-on plates only make sense on a selectorized stack. */
-export const supportsAddonPlates = (e: Equipment) => isCable(e) || isMachine(e);
+/** Add-on plates only make sense on a weight stack (cables, pin-loaded machines). */
+export const supportsAddonPlates = (e: Equipment, machineLoad?: 'pin' | 'plate' | null) =>
+  isCable(e) || (isMachine(e) && machineLoad !== 'plate');
+/** Equipment with a weight before anything is added (empty bar, sled, stack start). */
+export const supportsStartWeight = (e: Equipment) => e === 'barbell' || e === 'smith' || e === 'cable' || e === 'machine';
+export const MACHINE_LOADS = [{ value: 'pin', label: 'Pin-loaded (stack)' }, { value: 'plate', label: 'Plate-loaded' }] as const;
 
 export type Laterality = 'bilateral' | 'unilateral';
 
@@ -48,6 +50,11 @@ export const BAR_TYPES = [
   'Olympic barbell', "Women's Olympic bar", 'Standard bar', 'EZ bar', 'Trap bar', 'Safety squat bar',
   'Multi-grip bar', 'Cambered bar', 'Axle bar', 'Fixed barbell', 'Technique bar',
 ] as const;
+/** Typical empty weight (kg) of each bar type. */
+export const BAR_WEIGHTS_KG: Record<string, number> = {
+  'Olympic barbell': 20, "Women's Olympic bar": 15, 'Standard bar': 10, 'EZ bar': 10, 'Trap bar': 25,
+  'Safety squat bar': 30, 'Multi-grip bar': 20, 'Cambered bar': 25, 'Axle bar': 15, 'Fixed barbell': 0, 'Technique bar': 7,
+};
 export const supportsBarType = (e: Equipment) => e === 'barbell';
 
 /** Variants for bodyweight and band exercises; they decide how a set's weight is entered. */
@@ -89,14 +96,14 @@ export function stepWeight(weightKg: number, incrementKg: number, direction: 1 |
  * "Bar · Trap bar", "Cable · 2 pulleys · Rope", "Machine · Matrix Versa".
  */
 export function equipmentDetail(
-  e: { equipment: Equipment; variant?: string | null; barType?: string | null; pulleys?: number | null; attachment?: string | null; brandId?: string | null; seriesId?: string | null },
+  e: EqLike & { equipment: Equipment; variant?: string | null; barType?: string | null; pulleys?: number | null; attachment?: string | null; brandId?: string | null; seriesId?: string | null },
   brands: { id: string; name: string; series: { id: string; name: string }[] }[] = [],
 ): string {
   const l = equipmentLines(e, brands);
   return [l.equipment, l.sub, l.attachment].filter(Boolean).join(' · ');
 }
 
-type EqLike = { equipment: Equipment; variant?: string | null; barType?: string | null; pulleys?: number | null; attachment?: string | null; brandId?: string | null; seriesId?: string | null };
+type EqLike = { equipment: Equipment; laterality?: Laterality | null; machineLoad?: 'pin' | 'plate' | null; variant?: string | null; barType?: string | null; pulleys?: number | null; attachment?: string | null; brandId?: string | null; seriesId?: string | null };
 
 /** Equipment split in three lines: type, sub-type ("2 pulleys", "Olympic barbell", "Matrix Versa"), attachment. */
 export function equipmentLines(e: EqLike, brands: { id: string; name: string; series: { id: string; name: string }[] }[] = []) {
@@ -104,6 +111,8 @@ export function equipmentLines(e: EqLike, brands: { id: string; name: string; se
   if (e.equipment === 'barbell' && e.barType) sub.push(e.barType);
   if (supportsVariant(e.equipment) && e.variant && e.variant !== VARIANTS[e.equipment]![0]) sub.push(e.variant);
   if (e.equipment === 'cable' && e.pulleys) sub.push(`${e.pulleys} ${e.pulleys === 1 ? 'pulley' : 'pulleys'}`);
+  if (e.equipment === 'machine' && e.machineLoad) sub.push(e.machineLoad === 'plate' ? 'Plate-loaded' : 'Pin-loaded');
+  if (e.laterality === 'unilateral') sub.push('Unilateral');
   if (e.brandId) {
     const b = brands.find((x) => x.id === e.brandId);
     const s = b?.series.find((x) => x.id === e.seriesId);

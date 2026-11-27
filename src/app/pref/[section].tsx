@@ -3,6 +3,7 @@ import { Platform, Pressable, ScrollView, Share, Text, TextInput, View } from 'r
 import * as Clipboard from 'expo-clipboard';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
+import { BarTypesEditor, BrandsEditor, ListEditor } from '../../components/EquipmentEditors';
 import { CommitInput } from '../../components/CommitInput';
 import { useDataVersion } from '../../components/DataVersion';
 import { showAlert } from '../../components/Dialog';
@@ -16,8 +17,7 @@ import { APP_VERSION } from '../../data/appInfo';
 import {
   connectHealthConnect, grantedHealthTypes, HC_TYPES, healthConnectStatus, openHealthConnectSettings, syncHealthConnect, type HcStatus,
 } from '../../repo/healthConnect';
-import { BAR_TYPES, EQUIPMENT, EQUIPMENT_LABEL, VARIANTS, supportsBrand, supportsPulleys, PULLEY_OPTIONS, type Equipment } from '../../data/equipment';
-import { createBrand, createSeries, deleteBrand, deleteSeries, listBrands, renameBrand, renameSeries, type Brand } from '../../repo/brands';
+import { BAR_TYPES, BAR_WEIGHTS_KG, EQUIPMENT, EQUIPMENT_LABEL, VARIANTS, supportsBrand, supportsPulleys, PULLEY_OPTIONS, type Equipment } from '../../data/equipment';
 import { runAutoMacros } from '../../repo/autoMacros';
 import { exportAll, importAll, resetAll } from '../../repo/backup';
 import { DEFAULT_GOALS, getGoals, setGoals, type Goals } from '../../repo/kv';
@@ -126,38 +126,6 @@ function WorkoutSection() {
         <ToggleRow label="Keep screen on during workouts" value={prefs.keepAwake} onChange={(v) => setPrefs({ keepAwake: v })} />
       </Group>
     </>
-  );
-}
-
-/** Editable list of names: rename in place, remove, add. */
-function ListEditor({ items, onChange, placeholder }: { items: string[]; onChange: (next: string[]) => void; placeholder: string }) {
-  const [adding, setAdding] = useState('');
-  const add = () => {
-    const v = adding.trim();
-    if (!v || items.some((x) => x.toLowerCase() === v.toLowerCase())) { setAdding(''); return; }
-    onChange([...items, v]);
-    setAdding('');
-  };
-  return (
-    <Group>
-      {items.map((it, i) => (
-        <View key={`${it}-${i}`} style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, gap: 8 }}>
-          <CommitInput initial={it} style={{ flex: 1, minWidth: 0, color: colors.text, fontSize: 17, paddingVertical: 8 }}
-            onCommit={(t) => { const v = t.trim(); if (v) onChange(items.map((x, j) => (j === i ? v : x))); }} />
-          <Pressable onPress={() => onChange(items.filter((_, j) => j !== i))} hitSlop={8}
-            style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: colors.danger, fontWeight: '800' }}>✕</Text>
-          </Pressable>
-        </View>
-      ))}
-      <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, gap: 8 }}>
-        <TextInput value={adding} onChangeText={setAdding} onSubmitEditing={add} placeholder={placeholder} placeholderTextColor={colors.textDim}
-          style={{ flex: 1, minWidth: 0, color: colors.text, fontSize: 17, paddingVertical: 8 }} />
-        <Pressable onPress={add} hitSlop={8} style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, backgroundColor: colors.accent }}>
-          <Text style={{ color: '#0B0B0D', fontWeight: '800' }}>Add</Text>
-        </Pressable>
-      </View>
-    </Group>
   );
 }
 
@@ -286,8 +254,8 @@ function EquipmentTypeSection({ eq }: { eq: Equipment }) {
       {eq === 'barbell' && (
         <>
           <Text style={styles.section}>Bar types</Text>
-          <ListEditor items={prefs.barTypes} onChange={(barTypes) => setPrefs({ barTypes })} placeholder="Add a bar type" />
-          <Button label="Restore default bar types" variant="ghost" onPress={() => setPrefs({ barTypes: [...BAR_TYPES] })} />
+          <BarTypesEditor />
+          <Button label="Restore default bar types" variant="ghost" onPress={() => setPrefs({ barTypes: [...BAR_TYPES], barWeights: { ...BAR_WEIGHTS_KG } })} />
         </>
       )}
       {supportsBrand(eq) && <BrandsEditor />}
@@ -298,62 +266,6 @@ function EquipmentTypeSection({ eq }: { eq: Equipment }) {
       <Text style={[styles.dim, { marginHorizontal: 16 }]}>
         {list.length ? 'Tap a name to rename it. Exercises that already use a removed attachment keep it.' : `No attachments: ${EQUIPMENT_LABEL[eq]} exercises won't show an attachment field.`}
       </Text>
-    </>
-  );
-}
-
-/** Machine brands and their series (shared by Machine and Smith). */
-function BrandsEditor() {
-  const db = useSQLiteContext();
-  const [brands, setBrands] = useState<Brand[]>([]);
-  const [open, setOpen] = useState<string | null>(null);
-  const [adding, setAdding] = useState('');
-  const [addingSeries, setAddingSeries] = useState('');
-  const reload = () => listBrands(db).then(setBrands);
-  useEffect(() => { listBrands(db).then(setBrands); }, [db]);
-  const row = { flexDirection: 'row' as const, alignItems: 'center' as const, paddingHorizontal: 12, paddingVertical: 6, gap: 8 };
-  const inp = { flex: 1, minWidth: 0, color: colors.text, fontSize: 17, paddingVertical: 8 };
-  const x = (onPress: () => void) => (
-    <Pressable onPress={onPress} hitSlop={8} style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ color: colors.danger, fontWeight: '800' }}>✕</Text>
-    </Pressable>
-  );
-  const confirmDelete = (name: string, run: () => Promise<unknown>) => showAlert(`Delete ${name}?`, 'Exercises that use it keep working but lose this label.', [
-    { text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: async () => { await run(); reload(); } },
-  ]);
-  return (
-    <>
-      <Text style={styles.section}>Brands & series</Text>
-      <Group footer="Shared by Machine and Smith. Tap ▸ to edit a brand's series.">
-        {brands.map((b) => (
-          <View key={b.id}>
-            <View style={row}>
-              <Pressable onPress={() => setOpen(open === b.id ? null : b.id)} hitSlop={8}><Text style={{ color: colors.textDim, fontSize: 16, width: 18 }}>{open === b.id ? '▾' : '▸'}</Text></Pressable>
-              <CommitInput initial={b.name} style={inp} onCommit={async (t) => { if (t.trim()) { await renameBrand(db, b.id, t); reload(); } }} />
-              <Text style={styles.dim}>{b.series.length}</Text>
-              {x(() => confirmDelete(b.name, () => deleteBrand(db, b.id)))}
-            </View>
-            {open === b.id && (
-              <View style={{ paddingLeft: 28 }}>
-                {b.series.map((s) => (
-                  <View key={s.id} style={row}>
-                    <CommitInput initial={s.name} style={inp} onCommit={async (t) => { if (t.trim()) { await renameSeries(db, s.id, t); reload(); } }} />
-                    {x(() => confirmDelete(s.name, () => deleteSeries(db, s.id)))}
-                  </View>
-                ))}
-                <View style={row}>
-                  <TextInput value={addingSeries} onChangeText={setAddingSeries} placeholder={`Add a ${b.name} series`} placeholderTextColor={colors.textDim} style={inp}
-                    onSubmitEditing={async () => { if (addingSeries.trim()) { await createSeries(db, b.id, addingSeries); setAddingSeries(''); reload(); } }} />
-                </View>
-              </View>
-            )}
-          </View>
-        ))}
-        <View style={row}>
-          <TextInput value={adding} onChangeText={setAdding} placeholder="Add a brand" placeholderTextColor={colors.textDim} style={inp}
-            onSubmitEditing={async () => { if (adding.trim()) { await createBrand(db, adding); setAdding(''); reload(); } }} />
-        </View>
-      </Group>
     </>
   );
 }

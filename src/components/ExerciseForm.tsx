@@ -6,7 +6,7 @@ import { useProfile } from './ProfileContext';
 import { Button, Card, Chip, ChipRow, inputStyle, SectionTitle, styles } from './ui';
 import {
   DEFAULT_ADDON_PLATES_KG, VARIANTS, supportsVariant, PULLEY_OPTIONS, supportsBarType, DEFAULT_INCREMENT_KG, EQUIPMENT, EQUIPMENT_LABEL,
-  supportsAddonPlates, supportsPulleys, supportsBrand, supportsLaterality, type Equipment,
+  supportsAddonPlates, supportsPulleys, supportsBrand, supportsStartWeight, MACHINE_LOADS, supportsLaterality, type Equipment,
 } from '../data/equipment';
 import { MUSCLE_LABEL, MUSCLE_REGIONS, type Muscle } from '../data/muscles';
 import { usePrefs } from './Prefs';
@@ -17,12 +17,12 @@ import {
 } from '../repo/exercises';
 import { colors } from '../theme/colors';
 
-const ADDON_OPTIONS_KG = [0.5, 1, 1.25, 2.5];
 
 const blank: ExerciseInput = {
   name: '', primaryMuscle: 'chest', secondaryMuscles: [], equipment: 'dumbbell',
   incrementKg: DEFAULT_INCREMENT_KG.dumbbell, addonPlatesKg: [], laterality: 'bilateral',
   attachment: null, pulleys: null, restSeconds: null, barType: null, notes: null, variant: null, brandId: null, seriesId: null,
+  machineLoad: null, startWeightKg: null,
 };
 
 /** Applies an equipment choice and its defaults, keeping options that still apply. */
@@ -39,6 +39,8 @@ function withEquipment(f: ExerciseInput, eq: Equipment): ExerciseInput {
     variant: supportsVariant(eq) ? (f.variant && VARIANTS[eq]!.includes(f.variant) ? f.variant : VARIANTS[eq]![0]) : null,
     brandId: supportsBrand(eq) ? f.brandId : null,
     seriesId: supportsBrand(eq) ? f.seriesId : null,
+    machineLoad: eq === 'machine' ? (f.machineLoad ?? 'pin') : null,
+    startWeightKg: supportsStartWeight(eq) && f.equipment === eq ? f.startWeightKg : null,
   };
 }
 
@@ -70,6 +72,10 @@ export function ExerciseForm({ id, initialName = '', initialEquipment = null, on
   const [brands, setBrands] = useState<Brand[]>([]);
   const [newBrand, setNewBrand] = useState('');
   const [newSeries, setNewSeries] = useState('');
+  const [otherBrand, setOtherBrand] = useState(false);
+  const [otherSeries, setOtherSeries] = useState(false);
+  const [customPlate, setCustomPlate] = useState<string | null>(null);
+  const [startText, setStartText] = useState('');
 
   useEffect(() => {
     listBrands(db).then(setBrands);
@@ -80,6 +86,7 @@ export function ExerciseForm({ id, initialName = '', initialEquipment = null, on
       setForm(rest);
 
       setIncrementText(fmt(toDisplay(e.incrementKg, unit)));
+      setStartText(e.startWeightKg != null ? fmt(toDisplay(e.startWeightKg, unit)) : '');
     });
   }, [db, id, isNew, unit]);
 
@@ -106,6 +113,7 @@ export function ExerciseForm({ id, initialName = '', initialEquipment = null, on
     setNewBrand('');
     setBrands(await listBrands(db));
     setForm((f) => ({ ...f, brandId: bid, seriesId: null }));
+    setOtherBrand(false);
   };
 
   const addSeries = async () => {
@@ -114,6 +122,7 @@ export function ExerciseForm({ id, initialName = '', initialEquipment = null, on
     setNewSeries('');
     setBrands(await listBrands(db));
     set('seriesId', sid);
+    setOtherSeries(false);
   };
 
   const save = async () => {
@@ -123,6 +132,8 @@ export function ExerciseForm({ id, initialName = '', initialEquipment = null, on
       ...form,
       incrementKg: Number.isFinite(inc) && inc >= 0 ? Math.round(fromDisplay(inc, unit) * 1000) / 1000 : form.incrementKg,
       secondaryMuscles: form.secondaryMuscles.filter((m) => m !== form.primaryMuscle),
+      startWeightKg: supportsStartWeight(form.equipment) && startText.trim() !== '' && Number.isFinite(parseFloat(startText.replace(',', '.')))
+        ? Math.round(fromDisplay(parseFloat(startText.replace(',', '.')), unit) * 1000) / 1000 : null,
     };
     if (isNew) onSaved(await createExercise(db, data));
     else { await updateExercise(db, id!, data); onSaved(id!); }
@@ -177,7 +188,7 @@ export function ExerciseForm({ id, initialName = '', initialEquipment = null, on
         <>
           <SectionTitle>Bar</SectionTitle>
           <ChipRow wrap>
-            {[...new Set([...prefs.barTypes, ...(form.barType ? [form.barType] : [])])].map((b) => <Chip key={b} label={b} active={form.barType === b} onPress={() => set('barType', b)} />)}
+            {[...new Set([...prefs.barTypes, ...(form.barType ? [form.barType] : [])])].map((b) => <Chip key={b} label={b} active={form.barType === b} onPress={() => { set('barType', b); if (prefs.barWeights[b] != null) setStartText(fmt(toDisplay(prefs.barWeights[b], unit))); }} />)}
           </ChipRow>
         </>
       )}
@@ -204,33 +215,47 @@ export function ExerciseForm({ id, initialName = '', initialEquipment = null, on
         </>
       )}
 
+      {eq === 'machine' && (
+        <>
+          <SectionTitle>Loading</SectionTitle>
+          <ChipRow wrap>
+            {MACHINE_LOADS.map((l) => <Chip key={l.value} label={l.label} active={form.machineLoad === l.value} onPress={() => setForm((f) => ({ ...f, machineLoad: l.value, addonPlatesKg: l.value === 'plate' ? [] : f.addonPlatesKg }))} />)}
+          </ChipRow>
+        </>
+      )}
+
       {supportsBrand(eq) && (
         <>
-          <SectionTitle>Machine</SectionTitle>
-          <Card style={{ gap: 10 }}>
-            <Text style={styles.dim}>Machine brand</Text>
-            <ChipRow wrap>
-              {brands.map((b) => (
-                <Chip key={b.id} label={b.name} active={form.brandId === b.id}
-                  onPress={() => setForm((f) => ({ ...f, brandId: f.brandId === b.id ? null : b.id, seriesId: null }))} />
-              ))}
-            </ChipRow>
-            <AddRow value={newBrand} onChange={setNewBrand} onAdd={addBrand} placeholder="Add a brand" />
-            <Text style={styles.dim}>Series of machine</Text>
-            {brand ? (
-              <>
-                <ChipRow wrap>
-                  {brand.series.map((s) => (
-                    <Chip key={s.id} label={s.name} active={form.seriesId === s.id}
-                      onPress={() => set('seriesId', form.seriesId === s.id ? null : s.id)} />
-                  ))}
-                </ChipRow>
-                <AddRow value={newSeries} onChange={setNewSeries} onAdd={addSeries} placeholder={`Add a ${brand.name} series`} />
-              </>
-            ) : (
-              <Text style={[styles.dim, { fontStyle: 'italic' }]}>Pick a brand first</Text>
-            )}
-          </Card>
+          <SectionTitle>Brand</SectionTitle>
+          <ChipRow wrap>
+            {brands.map((b) => (
+              <Chip key={b.id} label={b.name} active={form.brandId === b.id}
+                onPress={() => { setOtherBrand(false); setForm((f) => ({ ...f, brandId: f.brandId === b.id ? null : b.id, seriesId: null })); }} />
+            ))}
+            <Chip label="Other" active={otherBrand} onPress={() => setOtherBrand((o) => !o)} />
+          </ChipRow>
+          {otherBrand && <AddRow value={newBrand} onChange={setNewBrand} onAdd={addBrand} placeholder="Brand name" />}
+          {brand && (
+            <>
+              <SectionTitle>Series</SectionTitle>
+              <ChipRow wrap>
+                {brand.series.map((x) => (
+                  <Chip key={x.id} label={x.name} active={form.seriesId === x.id}
+                    onPress={() => { setOtherSeries(false); set('seriesId', form.seriesId === x.id ? null : x.id); }} />
+                ))}
+                <Chip label="Other" active={otherSeries} onPress={() => setOtherSeries((o) => !o)} />
+              </ChipRow>
+              {otherSeries && <AddRow value={newSeries} onChange={setNewSeries} onAdd={addSeries} placeholder={`${brand.name} series name`} />}
+            </>
+          )}
+        </>
+      )}
+
+      {supportsStartWeight(eq) && (
+        <>
+          <SectionTitle>Starting weight ({unit})</SectionTitle>
+          <TextInput value={startText} onChangeText={setStartText} keyboardType="decimal-pad" placeholder={eq === 'barbell' ? 'Empty bar weight' : eq === 'cable' ? 'Weight of the first pin' : eq === 'smith' ? 'Bar weight of this smith machine' : 'Weight with nothing added'}
+            placeholderTextColor={colors.textDim} style={inputStyle} />
         </>
       )}
 
@@ -246,14 +271,25 @@ export function ExerciseForm({ id, initialName = '', initialEquipment = null, on
           <Card style={{ gap: 10 }}>
             <Text style={styles.dim}>Weight added when you tap + during a workout ({unit})</Text>
             <TextInput value={incrementText} onChangeText={setIncrementText} keyboardType="decimal-pad" style={inputStyle} />
-            {supportsAddonPlates(eq) && (
+            {supportsAddonPlates(eq, form.machineLoad) && (
               <>
-                <Text style={styles.dim}>Add-on plates you have for this stack (shown as extra buttons)</Text>
+                <Text style={styles.dim}>Mini plates you can add to the stack (shown as extra buttons)</Text>
                 <ChipRow wrap>
-                  {ADDON_OPTIONS_KG.map((kg) => (
-                    <Chip key={kg} label={`+${formatWeight(kg, 'kg')}`} active={form.addonPlatesKg.includes(kg)} onPress={() => toggleAddon(kg)} />
+                  {[...new Set([1.25, 2.5, ...form.addonPlatesKg])].sort((x, y) => x - y).map((kg) => (
+                    <Chip key={kg} label={`+${formatWeight(kg, unit)}`} active={form.addonPlatesKg.includes(kg)} onPress={() => toggleAddon(kg)} />
                   ))}
+                  <Chip label="Custom" active={customPlate != null} onPress={() => setCustomPlate((c) => (c == null ? '' : null))} />
                 </ChipRow>
+                {customPlate != null && (
+                  <AddRow value={customPlate} onChange={setCustomPlate} placeholder={`Plate weight (${unit})`} onAdd={() => {
+                    const v = parseFloat(customPlate.replace(',', '.'));
+                    if (Number.isFinite(v) && v > 0) {
+                      const kg = Math.round(fromDisplay(v, unit) * 1000) / 1000;
+                      if (!form.addonPlatesKg.includes(kg)) toggleAddon(kg);
+                    }
+                    setCustomPlate(null);
+                  }} />
+                )}
               </>
             )}
           </Card>
