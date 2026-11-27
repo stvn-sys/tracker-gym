@@ -26,7 +26,7 @@ export default function WorkoutDetailScreen() {
   const date = new Date(w.startedAt);
 
   const remove = () =>
-    showAlert('Delete this workout?', 'It is removed from history and rankings.', [
+    showAlert('Delete this workout?', 'It is removed from your history.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => { await discardWorkout(db, w.id); router.back(); } },
     ]);

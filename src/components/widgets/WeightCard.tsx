@@ -9,7 +9,7 @@ import { LineChart } from '../LineChart';
 import { useProfile } from '../ProfileContext';
 import { BigValue, prettyDate, useLoad, WidgetCard } from './common';
 
-/** Bodyweight with quick add. The latest value feeds the strength rankings. */
+/** Bodyweight with quick add. */
 export function WeightCard() {
   const db = useSQLiteContext();
   const { profile } = useProfile();
@@ -26,7 +26,7 @@ export function WeightCard() {
       <BigValue
         value={latest ? formatWeight(latest.weightKg, unit, false) : '–'}
         unit={unit}
-        sub={latest ? `Last logged ${prettyDate(latest.date)}` : 'Log your weight to unlock rankings'}
+        sub={latest ? `Last logged ${prettyDate(latest.date)}` : 'No weight logged yet'}
       />
       {change != null && (
         <Text style={{ color: colors.textDim }}>

@@ -78,22 +78,6 @@ export const CABLE_ATTACHMENTS = [
   'MAG grip', 'Cuff', 'Ankle strap', 'No attachment',
 ] as const;
 
-/** Starter brand/series list for machines. Editable in the app. */
-export const SEED_BRANDS: { name: string; series: string[] }[] = [
-  { name: 'Matrix', series: ['Versa', 'Magnum', 'Ultra', 'Aura', 'Varsity'] },
-  { name: 'Hammer Strength', series: ['Plate-Loaded', 'Select', 'MTS', 'HD Elite'] },
-  { name: 'Life Fitness', series: ['Insignia', 'Signature', 'Optima', 'Axiom'] },
-  { name: 'Technogym', series: ['Selection', 'Pure', 'Artis', 'Element+'] },
-  { name: 'Cybex', series: ['Eagle NX', 'Prestige', 'VR3'] },
-  { name: 'Panatta', series: ['Monolith', 'Fit Evo', 'Freeweight HP'] },
-  { name: 'gym80', series: ['Pure Kraft', 'Sygnum', '4E'] },
-  { name: 'Precor', series: ['Discovery', 'Resolute', 'Vitality'] },
-  { name: 'Nautilus', series: ['Impact', 'Inspiration', 'Nitro'] },
-  { name: 'Prime Fitness', series: ['Evolution', 'Hybrid'] },
-  { name: 'Arsenal Strength', series: ['Reloaded', 'Alpha'] },
-  { name: 'Eleiko', series: ['Strength'] },
-];
-
 /** Increase a weight by one step; on a stack, the add-on plate is added on top. */
 export function stepWeight(weightKg: number, incrementKg: number, direction: 1 | -1 = 1): number {
   const next = weightKg + direction * incrementKg;

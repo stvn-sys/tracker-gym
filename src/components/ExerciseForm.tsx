@@ -70,7 +70,6 @@ export function ExerciseForm({ id, initialName = '', initialEquipment = null, on
   const [brands, setBrands] = useState<Brand[]>([]);
   const [newBrand, setNewBrand] = useState('');
   const [newSeries, setNewSeries] = useState('');
-  const [isBuiltin, setIsBuiltin] = useState(false);
 
   useEffect(() => {
     listBrands(db).then(setBrands);
@@ -79,7 +78,7 @@ export function ExerciseForm({ id, initialName = '', initialEquipment = null, on
       if (!e) return;
       const { id: _id, builtinKey, ...rest } = e;
       setForm(rest);
-      setIsBuiltin(!!builtinKey);
+
       setIncrementText(fmt(toDisplay(e.incrementKg, unit)));
     });
   }, [db, id, isNew, unit]);
@@ -130,7 +129,7 @@ export function ExerciseForm({ id, initialName = '', initialEquipment = null, on
   };
 
   const remove = () =>
-    showAlert('Delete exercise?', isBuiltin ? 'You can bring it back with "Restore default exercises".' : 'Your past workouts keep their history.', [
+    showAlert('Delete exercise?', 'Your past workouts keep their history.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => { await deleteExercise(db, id!); onDeleted?.(); } },
     ]);

@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Tracker Gym",
+    "name": "Kinetic",
     "slug": "tracker-gym",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -11,7 +11,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#0B0D17",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -48,7 +48,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Tracker Gym uses the camera to scan food barcodes and take progress photos.",
+          "cameraPermission": "Kinetic uses the camera to scan food barcodes and take progress photos.",
           "recordAudioAndroid": false
         }
       ],
@@ -59,6 +59,15 @@
           "android": {
             "minSdkVersion": 26
           }
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180,
+          "backgroundColor": "#0B0D17",
+          "resizeMode": "contain"
         }
       ]
     ],

@@ -1,8 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import {
-  DEFAULT_ADDON_PLATES_KG, DEFAULT_INCREMENT_KG, type Equipment, type Laterality,
+  type Equipment, type Laterality,
 } from '../data/equipment';
-import { SEED_EXERCISES, type SeedExercise } from '../data/exercises.seed';
 import type { Muscle } from '../data/muscles';
 import { newId, now } from '../domain/ids';
 
@@ -61,26 +60,6 @@ export const mapExercise = (r: Row): Exercise => ({
   builtinKey: r.builtin_key,
 });
 
-export function seedToInput(e: SeedExercise, brandId: string | null = null, seriesId: string | null = null): ExerciseInput {
-  return {
-    name: e.name,
-    primaryMuscle: e.primary,
-    secondaryMuscles: e.secondary,
-    equipment: e.equipment,
-    incrementKg: DEFAULT_INCREMENT_KG[e.equipment],
-    addonPlatesKg: DEFAULT_ADDON_PLATES_KG[e.equipment] ?? [],
-    laterality: e.laterality,
-    attachment: e.attachment,
-    pulleys: e.pulleys,
-    restSeconds: null,
-    barType: e.barType,
-    notes: e.notes ?? null,
-    variant: e.variant ?? null,
-    brandId,
-    seriesId,
-  };
-}
-
 const COLS = 'name, primary_muscle, secondary_muscles, equipment, increment_kg, addon_plates, laterality, attachment, pulleys, rest_seconds, bar_type, notes, variant, brand_id, series_id';
 const values = (e: ExerciseInput) => [
   e.name.trim(), e.primaryMuscle, JSON.stringify(e.secondaryMuscles), e.equipment, e.incrementKg,
@@ -109,21 +88,6 @@ export async function createExercise(db: SQLiteDatabase, e: ExerciseInput, built
 }
 
 /** Machine brand/series ids for a premade exercise, looked up by name. */
-async function seedBrandIds(db: SQLiteDatabase, e: SeedExercise): Promise<[string | null, string | null]> {
-  if (!e.brand) return [null, null];
-  const b = await db.getFirstAsync<{ id: string }>('SELECT id FROM machine_brands WHERE name = ? AND deleted_at IS NULL', e.brand);
-  if (!b) return [null, null];
-  const s = e.series
-    ? await db.getFirstAsync<{ id: string }>('SELECT id FROM machine_series WHERE brand_id = ? AND name = ? AND deleted_at IS NULL', b.id, e.series)
-    : null;
-  return [b.id, s?.id ?? null];
-}
-
-export async function insertSeedExercise(db: SQLiteDatabase, e: SeedExercise) {
-  const [b, s] = await seedBrandIds(db, e);
-  return createExercise(db, seedToInput(e, b, s), e.key);
-}
-
 export async function updateExercise(db: SQLiteDatabase, id: string, e: ExerciseInput) {
   await db.runAsync(
     `UPDATE exercises SET name = ?, primary_muscle = ?, secondary_muscles = ?, equipment = ?, increment_kg = ?,
@@ -136,26 +100,6 @@ export async function updateExercise(db: SQLiteDatabase, id: string, e: Exercise
 export async function deleteExercise(db: SQLiteDatabase, id: string) {
   const t = now();
   await db.runAsync('UPDATE exercises SET deleted_at = ?, updated_at = ? WHERE id = ?', t, t, id);
-}
-
-/**
- * Restore defaults: re-creates deleted premade exercises and resets edited ones
- * to their shipped values. Your own exercises and your history are untouched.
- * Ids are kept so past workouts stay linked.
- */
-export async function restoreDefaultExercises(db: SQLiteDatabase) {
-  await db.withTransactionAsync(async () => {
-    for (const s of SEED_EXERCISES) {
-      const row = await db.getFirstAsync<{ id: string }>('SELECT id FROM exercises WHERE builtin_key = ?', s.key);
-      if (row) {
-        const [b, ser] = await seedBrandIds(db, s);
-        await updateExercise(db, row.id, seedToInput(s, b, ser));
-        await db.runAsync('UPDATE exercises SET deleted_at = NULL WHERE id = ?', row.id);
-      } else {
-        await insertSeedExercise(db, s);
-      }
-    }
-  });
 }
 
 /** Saves just the remembered notes of an exercise (used from the workout screen). */

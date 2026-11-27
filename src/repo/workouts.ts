@@ -293,7 +293,7 @@ export async function listHistory(db: SQLiteDatabase): Promise<WorkoutSummary[]>
   });
 }
 
-/** Every completed working set of an exercise with its workout date (for 1RM history / rankings). */
+/** Every completed working set of an exercise with its workout date (for 1RM history). */
 export async function exerciseSetHistory(db: SQLiteDatabase, exerciseId: string) {
   const rows = await db.getAllAsync<SetRow & { started_at: number; workout_id: string }>(
     `SELECT s.*, w.started_at, w.id AS workout_id FROM sets s

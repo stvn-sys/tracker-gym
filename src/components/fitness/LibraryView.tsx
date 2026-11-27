@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
-import { showAlert } from '../Dialog';
 import { router, useFocusEffect } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { Chip, ChipRow, inputStyle, styles } from '../../components/ui';
@@ -9,7 +8,7 @@ import { listBrands, type Brand } from '../../repo/brands';
 import { allE1rmSeries } from '../../repo/stats';
 import { LineChart } from '../LineChart';
 import { MUSCLES, MUSCLE_LABEL, type Muscle } from '../../data/muscles';
-import { listExercises, restoreDefaultExercises, type Exercise } from '../../repo/exercises';
+import { listExercises, type Exercise } from '../../repo/exercises';
 import { colors } from '../../theme/colors';
 
 type Sort = 'name' | 'muscle' | 'equipment';
@@ -45,12 +44,6 @@ export function LibraryView() {
 
   // Sub-types present for the chosen equipment (e.g. '2 pulleys', 'Matrix Versa', 'EZ bar').
   const subs = equipment ? [...new Set(items.filter((e) => e.equipment === equipment).flatMap(subParts))].sort() : [];
-
-  const restore = () =>
-    showAlert('Restore defaults?', 'Premade exercises are reset and deleted ones come back. Your own exercises and history are kept.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Restore', onPress: () => restoreDefaultExercises(db).then(reload) },
-    ]);
 
   return (
     <View style={styles.screen}>
@@ -98,11 +91,6 @@ export function LibraryView() {
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}
         keyboardShouldPersistTaps="handled"
         ListHeaderComponent={<Text style={[styles.dim, { marginVertical: 6 }]}>{visible.length} exercises</Text>}
-        ListFooterComponent={
-          <Pressable onPress={restore} style={{ paddingVertical: 20, alignItems: 'center' }}>
-            <Text style={{ color: colors.textDim }}>Restore default exercises</Text>
-          </Pressable>
-        }
         renderItem={({ item }) => (
           <Pressable
             onPress={() => router.push({ pathname: '/progress/[id]', params: { id: item.id } })}

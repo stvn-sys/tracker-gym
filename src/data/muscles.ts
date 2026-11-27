@@ -24,7 +24,7 @@ export const MUSCLE_GROUPS: Record<string, Muscle[]> = {
   Legs: ['quads', 'hamstrings', 'glutes', 'calves', 'adductors'],
 };
 
-/** Two big groups for pickers and rankings. Core counts as upper body. */
+/** Two big groups for pickers. Core counts as upper body. */
 export const MUSCLE_REGIONS: { label: string; muscles: Muscle[] }[] = [
   { label: 'Upper body', muscles: ['chest', 'upper_chest', 'front_delts', 'side_delts', 'rear_delts', 'lats', 'upper_back', 'traps', 'biceps', 'triceps', 'forearms', 'abs', 'obliques'] },
   { label: 'Lower body', muscles: ['quads', 'hamstrings', 'glutes', 'adductors', 'calves'] },

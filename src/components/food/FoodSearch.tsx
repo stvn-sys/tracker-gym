@@ -16,8 +16,12 @@ const WEB_NOTE = 'Food search and barcode scanning use the Open Food Facts datab
  * Find a food in Open Food Facts (by name or barcode), choose the amount, and add it.
  * Opens straight into the scanner when `scan` is set.
  */
-export function FoodSearch({ meal: initialMeal, scan, onAdd, onClose }: {
+export function FoodSearch({ meal: initialMeal, scan, onAdd, onClose, onManual, recent = [] }: {
   meal: Meal; scan?: boolean; onAdd: (meal: Meal, food: FoodInput) => void; onClose: () => void;
+  /** Shows an "Add it myself" button that opens manual entry. */
+  onManual?: () => void;
+  /** Recently logged foods, shown as one-tap chips before searching. */
+  recent?: FoodInput[];
 }) {
   const keyboard = useKeyboardHeight();
   const [step, setStep] = useState<Step>(scan ? { kind: 'scan' } : { kind: 'search' });
@@ -64,10 +68,33 @@ export function FoodSearch({ meal: initialMeal, scan, onAdd, onClose }: {
                 <Text style={{ color: '#0B0B0D', fontWeight: '800' }}>Search</Text>
               </Pressable>
             </View>
-            {Platform.OS !== 'web' && (
-              <Pressable onPress={() => { setError(''); setStep({ kind: 'scan' }); }} style={{ marginHorizontal: 16, marginBottom: 8 }}>
-                <Text style={{ color: colors.accent, fontWeight: '700' }}>Scan a barcode instead</Text>
-              </Pressable>
+            <View style={{ flexDirection: 'row', gap: 8, marginHorizontal: 16, marginBottom: 8 }}>
+              {Platform.OS !== 'web' && (
+                <Pressable onPress={() => { setError(''); setStep({ kind: 'scan' }); }}
+                  style={{ flex: 1, paddingVertical: 11, borderRadius: 12, alignItems: 'center', backgroundColor: colors.accentDim }}>
+                  <Text style={{ color: colors.accent, fontWeight: '800' }}>Scan barcode</Text>
+                </Pressable>
+              )}
+              {onManual && (
+                <Pressable onPress={onManual}
+                  style={{ flex: 1, paddingVertical: 11, borderRadius: 12, alignItems: 'center', backgroundColor: colors.surfaceAlt }}>
+                  <Text style={{ color: colors.text, fontWeight: '800' }}>Add it myself</Text>
+                </Pressable>
+              )}
+            </View>
+            {!results && recent.length > 0 && (
+              <View style={{ marginHorizontal: 16, marginBottom: 8, gap: 6 }}>
+                <Text style={styles.dim}>Recent — tap to add</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                  {recent.map((r) => (
+                    <Pressable key={r.name} onPress={() => onAdd(meal, r)}
+                      style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border }}>
+                      <Text style={{ color: colors.text, fontSize: 13 }}>{r.name}</Text>
+                      <Text style={{ color: colors.textDim, fontSize: 11 }}>{Math.round(r.calories)} kcal</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
             )}
             {busy && <ActivityIndicator color={colors.accent} style={{ marginTop: 16 }} />}
             {error ? <Text style={{ color: colors.textDim, marginHorizontal: 16, lineHeight: 20 }}>{error}</Text> : null}

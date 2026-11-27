@@ -1,5 +1,5 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
-import { seedIfEmpty, seedV2, seedV3 } from '../db/seed';
+import { seedIfEmpty, seedV2 } from '../db/seed';
 
 /**
  * Whole-database backup as JSON. Every table is exported row by row; importing
@@ -34,7 +34,7 @@ export async function exportAll(db: SQLiteDatabase, includePhotos: boolean): Pro
 export async function importAll(db: SQLiteDatabase, json: string) {
   let data: Backup;
   try { data = JSON.parse(json); } catch { throw new Error('That is not a backup file (it is not valid JSON).'); }
-  if (data?.app !== 'tracker-gym' || typeof data.tables !== 'object') throw new Error('That JSON is not a Tracker Gym backup.');
+  if (data?.app !== 'tracker-gym' || typeof data.tables !== 'object') throw new Error('That JSON is not a Kinetic backup.');
   const v = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
   if (data.schemaVersion > (v?.user_version ?? 0)) throw new Error('This backup comes from a newer version of the app. Update the app first.');
   const known = new Set(await tableNames(db));
@@ -62,5 +62,4 @@ export async function resetAll(db: SQLiteDatabase) {
   });
   await seedIfEmpty(db);
   await seedV2(db);
-  await seedV3(db);
 }

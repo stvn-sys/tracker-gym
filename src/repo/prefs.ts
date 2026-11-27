@@ -1,5 +1,5 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
-import { BAR_TYPES, CABLE_ATTACHMENTS, EQUIPMENT, type Equipment } from '../data/equipment';
+import { BAR_TYPES, EQUIPMENT, type Equipment } from '../data/equipment';
 import type { Accent, ThemeName } from '../theme/colors';
 import { getJSON, setJSON } from './kv';
 
@@ -49,7 +49,7 @@ export const DEFAULT_PREFS: Prefs = {
   schedule: 'weekdays', weekStart: 1,
   lengthUnit: 'cm',
   equipment: [...EQUIPMENT],
-  attachmentsByEq: { cable: [...CABLE_ATTACHMENTS] },
+  attachmentsByEq: {},
   barTypes: [...BAR_TYPES],
   gyms: [],
   healthConnect: { enabled: false, lastSync: null },

@@ -88,7 +88,7 @@ export default function Settings() {
       ))}
       {visible.length === 0 && <Text style={[styles.dim, { textAlign: 'center' }]}>No settings match “{query}”.</Text>}
 
-      <Text style={{ color: colors.textDim, textAlign: 'center', fontSize: 13 }}>Tracker Gym v{APP_VERSION}</Text>
+      <Text style={{ color: colors.textDim, textAlign: 'center', fontSize: 13 }}>Kinetic v{APP_VERSION}</Text>
     </ScrollView>
   );
 }

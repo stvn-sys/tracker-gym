@@ -4,7 +4,7 @@ import { colors } from '../theme/colors';
 
 /** Sub-tabs per bottom tab (route name → sections). The first one is the default. */
 export const SUBTABS: Record<string, string[]> = {
-  fitness: ['Routines', 'Log', 'Library', 'Ranks'],
+  fitness: ['Routines', 'Log', 'Library'],
   health: ['Metrics', 'Weight', 'Measurements', 'Photo Progress'],
 };
 

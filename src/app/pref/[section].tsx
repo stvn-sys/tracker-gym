@@ -16,7 +16,7 @@ import { APP_VERSION } from '../../data/appInfo';
 import {
   connectHealthConnect, grantedHealthTypes, HC_TYPES, healthConnectStatus, openHealthConnectSettings, syncHealthConnect, type HcStatus,
 } from '../../repo/healthConnect';
-import { BAR_TYPES, CABLE_ATTACHMENTS, EQUIPMENT, EQUIPMENT_LABEL, VARIANTS, supportsBrand, supportsPulleys, PULLEY_OPTIONS, type Equipment } from '../../data/equipment';
+import { BAR_TYPES, EQUIPMENT, EQUIPMENT_LABEL, VARIANTS, supportsBrand, supportsPulleys, PULLEY_OPTIONS, type Equipment } from '../../data/equipment';
 import { createBrand, createSeries, deleteBrand, deleteSeries, listBrands, renameBrand, renameSeries, type Brand } from '../../repo/brands';
 import { runAutoMacros } from '../../repo/autoMacros';
 import { exportAll, importAll, resetAll } from '../../repo/backup';
@@ -188,7 +188,7 @@ function HealthConnectSection() {
       const total = Object.values(n).reduce((a, b) => a + b, 0);
       setResult(total ? `Synced ${total} day-values from the last 30 days.` : 'Connected, but Health Connect has no data for the last 30 days yet.');
     } catch {
-      setResult('Sync failed. Open Health Connect and check that Tracker Gym has access.');
+      setResult('Sync failed. Open Health Connect and check that Kinetic has access.');
     } finally { setBusy(false); }
   };
 
@@ -196,7 +196,7 @@ function HealthConnectSection() {
     try {
       const g = await connectHealthConnect();
       setGranted(g);
-      if (!g.length) { showAlert('No access given', 'Allow Tracker Gym in Health Connect to read your data, then try again.'); return; }
+      if (!g.length) { showAlert('No access given', 'Allow Kinetic in Health Connect to read your data, then try again.'); return; }
       await sync();
     } catch {
       showAlert('Could not open Health Connect', 'Make sure the Health Connect app is installed and up to date.');
@@ -240,7 +240,7 @@ function HealthConnectSection() {
         ))}
       </Group>
       <Text style={[styles.dim, { marginHorizontal: 16, lineHeight: 20 }]}>
-        Sleep score is not shared through Health Connect, so it stays manual. To change what Tracker Gym can read, open Health Connect.
+        Sleep score is calculated by this app from your sleep stages. To change what Kinetic can read, open Health Connect.
       </Text>
       <Button label="Open Health Connect" variant="ghost" onPress={openHealthConnectSettings} />
     </>
@@ -298,7 +298,6 @@ function EquipmentTypeSection({ eq }: { eq: Equipment }) {
       <Text style={[styles.dim, { marginHorizontal: 16 }]}>
         {list.length ? 'Tap a name to rename it. Exercises that already use a removed attachment keep it.' : `No attachments: ${EQUIPMENT_LABEL[eq]} exercises won't show an attachment field.`}
       </Text>
-      {eq === 'cable' && <Button label="Restore default cable attachments" variant="ghost" onPress={() => setList([...CABLE_ATTACHMENTS])} />}
     </>
   );
 }
@@ -535,7 +534,7 @@ function DataSection() {
     const json = await exportAll(db, withPhotos);
     const kb = Math.round(json.length / 1024);
     try {
-      if (how === 'share') await Share.share({ message: json, title: 'Tracker Gym backup' });
+      if (how === 'share') await Share.share({ message: json, title: 'Kinetic backup' });
       else { await Clipboard.setStringAsync(json); showAlert('Backup copied', `${kb} KB copied. Paste it into a note or email to keep it safe.`); }
     } catch {
       showAlert('Could not export', 'Try the other export option.');
@@ -603,8 +602,7 @@ function AboutSection() {
         ))}
       </Group>
       <Text style={[styles.dim, { marginHorizontal: 16, lineHeight: 20 }]}>
-        Tracker Gym keeps everything on this device. Nothing is uploaded and there is no account. Strength standards are approximate; see the
-        standards file in the source for where the numbers come from.
+        Kinetic keeps everything on this device. Nothing is uploaded and there is no account.
       </Text>
     </>
   );
