@@ -28,3 +28,23 @@ export function mixHex(a: string, b: string, t: number): string {
   const k = Math.max(0, Math.min(1, t));
   return '#' + pa.map((v, i) => Math.round(v + (pb[i] - v) * k).toString(16).padStart(2, '0')).join('');
 }
+
+export interface VolumeSource { workout: string; exercise: string; sets: number; secondary: boolean; times: number }
+
+/** Which exercises make up a muscle's weekly sets (most first). */
+export function volumeBreakdown(
+  workouts: (VolumeWorkout & { name?: string; exercises: (VolumeWorkout['exercises'][number] & { exerciseName?: string })[] })[],
+  muscle: Muscle,
+): VolumeSource[] {
+  const out: VolumeSource[] = [];
+  for (const w of workouts) {
+    const times = Math.max(1, w.weekdays.length);
+    for (const e of w.exercises) {
+      const primary = e.primaryMuscle === muscle;
+      const secondary = !primary && e.secondaryMuscles.includes(muscle);
+      if (!primary && !secondary) continue;
+      out.push({ workout: w.name ?? '', exercise: e.exerciseName ?? '', sets: (secondary ? 0.5 : 1) * e.targetSets * times, secondary, times });
+    }
+  }
+  return out.sort((a, b) => b.sets - a.sets);
+}

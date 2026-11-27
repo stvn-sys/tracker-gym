@@ -270,4 +270,9 @@ export const MIGRATIONS: string[] = [
   UPDATE exercises SET primary_muscle = 'rhomboids' WHERE primary_muscle = 'upper_back';
   UPDATE exercises SET secondary_muscles = REPLACE(secondary_muscles, '"upper_back"', '"rhomboids"');
   `,
+  // 11: default rep range per exercise
+  `
+  ALTER TABLE exercises ADD COLUMN rep_min INTEGER;
+  ALTER TABLE exercises ADD COLUMN rep_max INTEGER;
+  `,
 ];

@@ -8,9 +8,9 @@ import {
   DEFAULT_ADDON_PLATES_KG, VARIANTS, supportsVariant, PULLEY_OPTIONS, supportsBarType, DEFAULT_INCREMENT_KG, EQUIPMENT, EQUIPMENT_LABEL,
   supportsAddonPlates, supportsPulleys, supportsBrand, supportsStartWeight, MACHINE_LOADS, supportsLaterality, type Equipment,
 } from '../data/equipment';
-import { MUSCLE_LABEL, MUSCLE_REGIONS, type Muscle } from '../data/muscles';
+import { MusclePicker } from './MusclePicker';
 import { usePrefs } from './Prefs';
-import { formatWeight, fromDisplay, toDisplay } from '../domain/units';
+import { fromDisplay, toDisplay } from '../domain/units';
 import { createBrand, createSeries, listBrands, type Brand } from '../repo/brands';
 import {
   createExercise, deleteExercise, getExercise, updateExercise, type ExerciseInput,
@@ -22,7 +22,7 @@ const blank: ExerciseInput = {
   name: '', primaryMuscle: 'chest', secondaryMuscles: [], equipment: 'dumbbell',
   incrementKg: DEFAULT_INCREMENT_KG.dumbbell, addonPlatesKg: [], laterality: 'bilateral',
   attachment: null, pulleys: null, restSeconds: null, barType: null, notes: null, variant: null, brandId: null, seriesId: null,
-  machineLoad: null, startWeightKg: null,
+  machineLoad: null, startWeightKg: null, repMin: 8, repMax: 12,
 };
 
 /** Applies an equipment choice and its defaults, keeping options that still apply. */
@@ -98,11 +98,6 @@ export function ExerciseForm({ id, initialName = '', initialEquipment = null, on
     setForm((f) => withEquipment(f, eq));
     setIncrementText(fmt(toDisplay(DEFAULT_INCREMENT_KG[eq], unit)));
   };
-
-  const toggleSecondary = (m: Muscle) =>
-    set('secondaryMuscles', form.secondaryMuscles.includes(m)
-      ? form.secondaryMuscles.filter((x) => x !== m)
-      : [...form.secondaryMuscles, m]);
 
   const toggleAddon = (kg: number) =>
     set('addonPlatesKg', form.addonPlatesKg.includes(kg)
@@ -261,6 +256,19 @@ export function ExerciseForm({ id, initialName = '', initialEquipment = null, on
         </>
       )}
 
+      <SectionTitle>Rep range</SectionTitle>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <RepBox value={form.repMin} onChange={(v) => setForm((f) => ({ ...f, repMin: v, repMax: v != null && f.repMax != null && f.repMax < v ? v : f.repMax }))} />
+        <Text style={styles.dim}>to</Text>
+        <RepBox value={form.repMax} onChange={(v) => set('repMax', v)} />
+        <Text style={[styles.dim, { flex: 1 }]}>reps · used when you add this exercise to a workout</Text>
+      </View>
+      <ChipRow wrap>
+        {[[3, 5], [4, 6], [6, 8], [8, 12], [10, 15], [12, 20]].map(([a, b]) => (
+          <Chip key={a} label={`${a}–${b}`} active={form.repMin === a && form.repMax === b} onPress={() => setForm((f) => ({ ...f, repMin: a, repMax: b }))} />
+        ))}
+      </ChipRow>
+
       <SectionTitle>Rest timer</SectionTitle>
       <ChipRow wrap>
         <Chip label={`Default (${mmss(profile.restSeconds)})`} active={form.restSeconds == null} onPress={() => set('restSeconds', null)} />
@@ -278,7 +286,7 @@ export function ExerciseForm({ id, initialName = '', initialEquipment = null, on
                 <Text style={styles.dim}>Mini plates you can add to the stack (shown as extra buttons)</Text>
                 <ChipRow wrap>
                   {[...new Set([1.25, 2.5, ...form.addonPlatesKg])].sort((x, y) => x - y).map((kg) => (
-                    <Chip key={kg} label={`+${formatWeight(kg, unit)}`} active={form.addonPlatesKg.includes(kg)} onPress={() => toggleAddon(kg)} />
+                    <Chip key={kg} label={`+${fmt(toDisplay(kg, unit))} ${unit}`} active={form.addonPlatesKg.includes(kg)} onPress={() => toggleAddon(kg)} />
                   ))}
                   <Chip label="Custom" active={customPlate != null} onPress={() => setCustomPlate((c) => (c == null ? '' : null))} />
                 </ChipRow>
@@ -298,27 +306,9 @@ export function ExerciseForm({ id, initialName = '', initialEquipment = null, on
         </>
       )}
 
-      <SectionTitle>Primary muscle</SectionTitle>
-      {MUSCLE_REGIONS.map((r) => (
-        <View key={r.label} style={{ gap: 8 }}>
-          <Text style={styles.dim}>{r.label}</Text>
-          <ChipRow wrap>
-            {r.muscles.map((m) => <Chip key={m} label={MUSCLE_LABEL[m]} active={form.primaryMuscle === m} onPress={() => set('primaryMuscle', m)} />)}
-          </ChipRow>
-        </View>
-      ))}
-
-      <SectionTitle>Secondary muscles</SectionTitle>
-      {MUSCLE_REGIONS.map((r) => (
-        <View key={r.label} style={{ gap: 8 }}>
-          <Text style={styles.dim}>{r.label}</Text>
-          <ChipRow wrap>
-            {r.muscles.filter((m) => m !== form.primaryMuscle).map((m) => (
-              <Chip key={m} label={MUSCLE_LABEL[m]} active={form.secondaryMuscles.includes(m)} onPress={() => toggleSecondary(m)} />
-            ))}
-          </ChipRow>
-        </View>
-      ))}
+      <SectionTitle>Muscles</SectionTitle>
+      <MusclePicker primary={form.primaryMuscle} secondary={form.secondaryMuscles}
+        onChange={(p, sec) => setForm((f) => ({ ...f, primaryMuscle: p, secondaryMuscles: sec }))} />
 
       <SectionTitle>Notes</SectionTitle>
       <TextInput value={form.notes ?? ''} onChangeText={(v) => set('notes', v)} multiline
@@ -337,6 +327,14 @@ export function ExerciseForm({ id, initialName = '', initialEquipment = null, on
         {!isNew && <Button label="Delete exercise" variant="danger" onPress={remove} />}
       </View>
     </ScrollView>
+  );
+}
+
+function RepBox({ value, onChange }: { value: number | null; onChange: (v: number | null) => void }) {
+  return (
+    <TextInput value={value == null ? '' : String(value)} keyboardType="number-pad" selectTextOnFocus
+      onChangeText={(t) => { const v = parseInt(t, 10); onChange(Number.isFinite(v) && v > 0 ? Math.min(100, v) : null); }}
+      style={[inputStyle, { width: 64, textAlign: 'center', fontWeight: '700' }]} />
   );
 }
 

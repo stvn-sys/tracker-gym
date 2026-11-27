@@ -34,6 +34,9 @@ export interface Exercise {
   machineLoad: 'pin' | 'plate' | null;
   /** Weight before anything is added (empty bar, sled, first plate of a stack), kg. */
   startWeightKg: number | null;
+  /** Default rep range used when this exercise is added to a workout. */
+  repMin: number | null;
+  repMax: number | null;
 }
 
 export type ExerciseInput = Omit<Exercise, 'id' | 'builtinKey'>;
@@ -42,7 +45,7 @@ interface Row {
   id: string; name: string; primary_muscle: string; secondary_muscles: string; equipment: string;
   increment_kg: number; addon_plates: string; laterality: string | null; attachment: string | null; pulleys: number | null; rest_seconds: number | null; bar_type: string | null; notes: string | null; variant: string | null;
   brand_id: string | null; series_id: string | null; builtin_key: string | null;
-  machine_load: string | null; start_weight_kg: number | null;
+  machine_load: string | null; start_weight_kg: number | null; rep_min: number | null; rep_max: number | null;
 }
 
 export const mapExercise = (r: Row): Exercise => ({
@@ -65,12 +68,14 @@ export const mapExercise = (r: Row): Exercise => ({
   builtinKey: r.builtin_key,
   machineLoad: (r.machine_load as 'pin' | 'plate' | null) ?? null,
   startWeightKg: r.start_weight_kg ?? null,
+  repMin: r.rep_min ?? null,
+  repMax: r.rep_max ?? null,
 });
 
-const COLS = 'name, primary_muscle, secondary_muscles, equipment, increment_kg, addon_plates, laterality, attachment, pulleys, rest_seconds, bar_type, notes, variant, brand_id, series_id, machine_load, start_weight_kg';
+const COLS = 'name, primary_muscle, secondary_muscles, equipment, increment_kg, addon_plates, laterality, attachment, pulleys, rest_seconds, bar_type, notes, variant, brand_id, series_id, machine_load, start_weight_kg, rep_min, rep_max';
 const values = (e: ExerciseInput) => [
   e.name.trim(), e.primaryMuscle, JSON.stringify(e.secondaryMuscles), e.equipment, e.incrementKg,
-  JSON.stringify(e.addonPlatesKg), e.laterality, e.attachment, e.pulleys, e.restSeconds, e.barType, e.notes?.trim() || null, e.variant, e.brandId, e.seriesId, e.machineLoad, e.startWeightKg,
+  JSON.stringify(e.addonPlatesKg), e.laterality, e.attachment, e.pulleys, e.restSeconds, e.barType, e.notes?.trim() || null, e.variant, e.brandId, e.seriesId, e.machineLoad, e.startWeightKg, e.repMin, e.repMax,
 ];
 
 export async function listExercises(db: SQLiteDatabase): Promise<Exercise[]> {
@@ -88,7 +93,7 @@ export async function getExercise(db: SQLiteDatabase, id: string): Promise<Exerc
 export async function createExercise(db: SQLiteDatabase, e: ExerciseInput, builtinKey: string | null = null) {
   const id = newId();
   await db.runAsync(
-    `INSERT INTO exercises (id, ${COLS}, builtin_key, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO exercises (id, ${COLS}, builtin_key, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     id, ...values(e), builtinKey, now(),
   );
   return id;
@@ -97,7 +102,7 @@ export async function createExercise(db: SQLiteDatabase, e: ExerciseInput, built
 export async function updateExercise(db: SQLiteDatabase, id: string, e: ExerciseInput) {
   await db.runAsync(
     `UPDATE exercises SET name = ?, primary_muscle = ?, secondary_muscles = ?, equipment = ?, increment_kg = ?,
-     addon_plates = ?, laterality = ?, attachment = ?, pulleys = ?, rest_seconds = ?, bar_type = ?, notes = ?, variant = ?, brand_id = ?, series_id = ?, machine_load = ?, start_weight_kg = ?, updated_at = ? WHERE id = ?`,
+     addon_plates = ?, laterality = ?, attachment = ?, pulleys = ?, rest_seconds = ?, bar_type = ?, notes = ?, variant = ?, brand_id = ?, series_id = ?, machine_load = ?, start_weight_kg = ?, rep_min = ?, rep_max = ?, updated_at = ? WHERE id = ?`,
     ...values(e), now(), id,
   );
 }

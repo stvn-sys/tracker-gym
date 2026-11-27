@@ -23,29 +23,41 @@ const SILHOUETTE_HALF: Pt[] = [
 const FRONT: Shape[] = [
   { muscle: 'traps', pts: [[102, 60], [112, 63], [125, 70], [105, 72]] },
   { muscle: 'upper_chest', pts: [[102, 76], [124, 73], [132, 80], [103, 87]] },
-  { muscle: 'chest', pts: [[102, 90], [132, 83], [136, 96], [128, 109], [103, 109]] },
+  { muscle: 'chest', pts: [[102, 89], [132, 83], [136, 95], [103, 99]] },
+  { muscle: 'lower_chest', pts: [[103, 101], [136, 97], [128, 109], [103, 110]] },
+  { muscle: 'neck', pts: [[102, 48], [108, 50], [110, 60], [102, 59]] },
   { muscle: 'front_delts', pts: [[128, 71], [139, 73], [143, 85], [137, 95], [134, 82]] },
   { muscle: 'side_delts', pts: [[141, 74], [150, 79], [154, 92], [146, 88]] },
-  { muscle: 'biceps', pts: [[141, 99], [151, 96], [156, 118], [151, 133], [144, 127]] },
+  { muscle: 'biceps', pts: [[141, 99], [151, 96], [154, 116], [148, 128], [143, 120]] },
+  { muscle: 'brachialis', pts: [[150, 120], [156, 118], [155, 133], [149, 134]] },
   { muscle: 'forearms', pts: [[145, 139], [154, 137], [162, 160], [161, 180], [152, 181], [147, 159]] },
   { muscle: 'abs', pts: [[102, 113], [116, 113], [116, 167], [109, 177], [102, 179]] },
   { muscle: 'obliques', pts: [[120, 113], [129, 114], [133, 140], [128, 168], [120, 164]] },
+  { muscle: 'hip_flexors', pts: [[108, 181], [122, 176], [119, 195], [109, 196]] },
+  { muscle: 'abductors', pts: [[128, 178], [137, 189], [135, 204], [129, 194]] },
   { muscle: 'adductors', pts: [[102, 197], [107, 201], [109, 231], [103, 241]] },
   { muscle: 'quads', pts: [[109, 199], [126, 187], [134, 203], [132, 247], [123, 261], [113, 256], [110, 231]] },
-  { muscle: 'calves', pts: [[116, 284], [129, 281], [131, 317], [124, 348], [117, 331]] },
+  { muscle: 'calves', pts: [[113, 284], [121, 282], [121, 330], [115, 326]] },
+  { muscle: 'tibialis', pts: [[123, 282], [131, 284], [130, 318], [124, 346], [122, 320]] },
 ];
 
 const BACK: Shape[] = [
-  { muscle: 'traps', pts: [[102, 57], [111, 61], [129, 72], [113, 89], [102, 110]] },
+  { muscle: 'neck', pts: [[102, 46], [108, 48], [109, 57], [102, 56]] },
+  { muscle: 'traps', pts: [[102, 57], [111, 61], [129, 72], [112, 78], [102, 80]] },
+  { muscle: 'mid_traps', pts: [[102, 82], [113, 80], [118, 88], [110, 100], [102, 110]] },
   { muscle: 'rear_delts', pts: [[131, 74], [144, 79], [147, 93], [137, 89]] },
   { muscle: 'side_delts', pts: [[146, 79], [154, 89], [149, 95]] },
   { muscle: 'rhomboids', pts: [[105, 93], [114, 91], [132, 92], [127, 109], [106, 112]] },
-  { muscle: 'lats', pts: [[105, 116], [129, 111], [137, 121], [130, 149], [112, 164], [105, 158]] },
+  { muscle: 'teres_major', pts: [[128, 100], [138, 101], [137, 112], [129, 110]] },
+  { muscle: 'lats', pts: [[105, 116], [129, 113], [137, 121], [130, 149], [114, 160], [106, 154]] },
+  { muscle: 'lower_back', pts: [[102, 158], [111, 156], [117, 175], [102, 178]] },
   { muscle: 'triceps', pts: [[141, 97], [151, 95], [156, 121], [151, 133], [144, 126]] },
-  { muscle: 'forearms', pts: [[145, 139], [154, 137], [162, 160], [161, 180], [152, 181], [147, 159]] },
-  { muscle: 'glutes', pts: [[102, 180], [123, 173], [135, 191], [131, 211], [110, 216], [102, 208]] },
+  { muscle: 'forearm_extensors', pts: [[145, 139], [154, 137], [162, 160], [161, 180], [152, 181], [147, 159]] },
+  { muscle: 'glutes', pts: [[102, 184], [121, 180], [133, 194], [131, 211], [110, 216], [102, 208]] },
+  { muscle: 'glute_medius', pts: [[112, 176], [126, 172], [136, 184], [132, 192], [120, 181]] },
   { muscle: 'hamstrings', pts: [[105, 221], [130, 216], [132, 255], [123, 265], [112, 261], [107, 240]] },
-  { muscle: 'calves', pts: [[112, 282], [130, 280], [134, 310], [125, 340], [115, 327], [110, 302]] },
+  { muscle: 'calves', pts: [[112, 282], [130, 280], [134, 310], [125, 322], [115, 318], [110, 302]] },
+  { muscle: 'soleus', pts: [[115, 322], [126, 324], [124, 350], [117, 348]] },
 ];
 
 const mirror = (pts: Pt[]): Pt[] => pts.map(([x, y]) => [200 - x, y]);
@@ -75,9 +87,11 @@ interface Props {
   colorFor: (m: Muscle) => string | null;
   height?: number;
   showLabels?: boolean;
+  /** Makes muscles tappable. */
+  onPressMuscle?: (m: Muscle) => void;
 }
 
-function Figure({ shapes, colorFor, height, label, id }: { shapes: Shape[]; colorFor: Props['colorFor']; height: number; label?: string; id: string }) {
+function Figure({ shapes, colorFor, height, label, id, onPressMuscle }: { shapes: Shape[]; colorFor: Props['colorFor']; height: number; label?: string; id: string; onPressMuscle?: Props['onPressMuscle'] }) {
   return (
     <View style={{ alignItems: 'center', flex: 1 }}>
       {label && <Text style={{ color: colors.textDim, fontSize: 11, marginBottom: 4, letterSpacing: 1.5, fontWeight: '700' }}>{label}</Text>}
@@ -106,8 +120,8 @@ function Figure({ shapes, colorFor, height, label, id }: { shapes: Shape[]; colo
             const fill = colorFor(s.muscle) ?? UNTRAINED;
             return (
               <G key={i}>
-                <Path d={smooth(s.pts)} fill={fill} stroke={BODY} strokeWidth={1.6} strokeLinejoin="round" />
-                <Path d={smooth(mirror(s.pts))} fill={fill} stroke={BODY} strokeWidth={1.6} strokeLinejoin="round" />
+                <Path d={smooth(s.pts)} fill={fill} stroke={BODY} strokeWidth={1.6} strokeLinejoin="round" onPress={onPressMuscle ? () => onPressMuscle(s.muscle) : undefined} />
+                <Path d={smooth(mirror(s.pts))} fill={fill} stroke={BODY} strokeWidth={1.6} strokeLinejoin="round" onPress={onPressMuscle ? () => onPressMuscle(s.muscle) : undefined} />
               </G>
             );
           })}
@@ -118,12 +132,12 @@ function Figure({ shapes, colorFor, height, label, id }: { shapes: Shape[]; colo
   );
 }
 
-export function BodyMap({ colorFor, height = 300, showLabels = true }: Props) {
+export function BodyMap({ colorFor, height = 300, showLabels = true, onPressMuscle }: Props) {
   const id = useId().replace(/[^a-zA-Z0-9]/g, '');
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-      <Figure id={`${id}f`} shapes={FRONT} colorFor={colorFor} height={height} label={showLabels ? 'FRONT' : undefined} />
-      <Figure id={`${id}b`} shapes={BACK} colorFor={colorFor} height={height} label={showLabels ? 'BACK' : undefined} />
+      <Figure id={`${id}f`} shapes={FRONT} colorFor={colorFor} height={height} label={showLabels ? 'FRONT' : undefined} onPressMuscle={onPressMuscle} />
+      <Figure id={`${id}b`} shapes={BACK} colorFor={colorFor} height={height} label={showLabels ? 'BACK' : undefined} onPressMuscle={onPressMuscle} />
     </View>
   );
 }

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, Text, TextInput, View } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
-import { EQUIPMENT, EQUIPMENT_LABEL, equipmentDetail, type Equipment } from '../data/equipment';
+import { EQUIPMENT, EQUIPMENT_LABEL, type Equipment } from '../data/equipment';
+import { EquipmentText } from './EquipmentText';
 import { MUSCLE_LABEL, type Muscle } from '../data/muscles';
 import { listBrands, type Brand } from '../repo/brands';
 import { getExercise, listExercises, type Exercise } from '../repo/exercises';
@@ -102,7 +103,7 @@ export function ExercisePicker({ visible, title, preferMuscle, excludeId, onPick
                   style={{ paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border }}
                 >
                   <Text style={styles.text}>{item.name}</Text>
-                  <Text style={styles.dim}>{MUSCLE_LABEL[item.primaryMuscle]} · {equipmentDetail(item, brands)}</Text>
+                  <EquipmentText exercise={item} brands={brands} prefix={MUSCLE_LABEL[item.primaryMuscle]} size={14} />
                 </Pressable>
               )}
             />

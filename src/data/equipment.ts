@@ -107,16 +107,17 @@ type EqLike = { equipment: Equipment; laterality?: Laterality | null; machineLoa
 
 /** Equipment split in three lines: type, sub-type ("2 pulleys", "Olympic barbell", "Matrix Versa"), attachment. */
 export function equipmentLines(e: EqLike, brands: { id: string; name: string; series: { id: string; name: string }[] }[] = []) {
+  const top: string[] = [EQUIPMENT_LABEL[e.equipment]];
+  if (e.equipment === 'machine' && e.machineLoad) top.push(e.machineLoad === 'plate' ? 'Plate-loaded' : 'Pin-loaded');
   const sub: string[] = [];
-  if (e.equipment === 'barbell' && e.barType) sub.push(e.barType);
-  if (supportsVariant(e.equipment) && e.variant && e.variant !== VARIANTS[e.equipment]![0]) sub.push(e.variant);
-  if (e.equipment === 'cable' && e.pulleys) sub.push(`${e.pulleys} ${e.pulleys === 1 ? 'pulley' : 'pulleys'}`);
-  if (e.equipment === 'machine' && e.machineLoad) sub.push(e.machineLoad === 'plate' ? 'Plate-loaded' : 'Pin-loaded');
-  if (e.laterality === 'unilateral') sub.push('Unilateral');
   if (e.brandId) {
     const b = brands.find((x) => x.id === e.brandId);
     const s = b?.series.find((x) => x.id === e.seriesId);
     if (b) sub.push([b.name, s?.name].filter(Boolean).join(' '));
   }
-  return { equipment: EQUIPMENT_LABEL[e.equipment], sub: sub.join(' · ') || null, attachment: e.attachment || null };
+  if (e.equipment === 'barbell' && e.barType) sub.push(e.barType);
+  if (supportsVariant(e.equipment) && e.variant && e.variant !== VARIANTS[e.equipment]![0]) sub.push(e.variant);
+  if (e.equipment === 'cable' && e.pulleys) sub.push(`${e.pulleys} ${e.pulleys === 1 ? 'pulley' : 'pulleys'}`);
+  if (e.laterality === 'unilateral') sub.push('Unilateral');
+  return { equipment: top.join(' · '), sub: sub.join(' · ') || null, attachment: e.attachment || null };
 }

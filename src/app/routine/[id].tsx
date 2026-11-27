@@ -7,9 +7,10 @@ import { ExercisePicker } from '../../components/ExercisePicker';
 import { Icon } from '../../components/Icon';
 import { usePrefs } from '../../components/Prefs';
 import { estimateFromItems } from '../../components/fitness/WorkoutChips';
+import { CommitInput } from '../../components/CommitInput';
+import { EquipmentText } from '../../components/EquipmentText';
 import { useProfile } from '../../components/ProfileContext';
 import { Button, Card, inputStyle, SectionTitle, styles } from '../../components/ui';
-import { equipmentDetail } from '../../data/equipment';
 import { listBrands, type Brand } from '../../repo/brands';
 import { listExercises, type Exercise } from '../../repo/exercises';
 import { createRoutine, deleteRoutine, getRoutine, updateRoutine } from '../../repo/routines';
@@ -145,7 +146,7 @@ export default function WorkoutEditor() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.text, { fontWeight: '700' }]}>{ex?.name ?? '…'}</Text>
-                {ex && <Text style={[styles.dim, { fontSize: 12 }]} numberOfLines={1}>{equipmentDetail(ex, brands)}</Text>}
+                {ex && <EquipmentText exercise={ex} brands={brands} />}
               </View>
               <IconBtn label="↑" onPress={() => move(i, -1)} disabled={i === 0} />
               <IconBtn label="↓" onPress={() => move(i, 1)} disabled={i === items.length - 1} />
@@ -192,7 +193,7 @@ export default function WorkoutEditor() {
         onClose={() => setPicking(false)}
         onPick={(ex) => {
           setExercises((m) => new Map(m).set(ex.id, ex));
-          setItems((l) => [...l, { key: `${ex.id}-${Date.now()}`, exerciseId: ex.id, targetSets: 3, targetReps: 8, targetRepsMax: 12, supersetId: null }]);
+          setItems((l) => [...l, { key: `${ex.id}-${Date.now()}`, exerciseId: ex.id, targetSets: 3, targetReps: ex.repMin ?? 8, targetRepsMax: ex.repMax ?? 12, supersetId: null }]);
           setPicking(false);
         }}
       />
@@ -225,7 +226,10 @@ function Stepper({ value, min, onChange }: { value: number; min: number; onChang
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
       <IconBtn label="−" onPress={() => onChange(Math.max(min, value - 1))} />
-      <Text style={[styles.text, { minWidth: 26, textAlign: 'center', fontWeight: '700' }]}>{value}</Text>
+      {/* Tap the number to type it. */}
+      <CommitInput key={value} initial={String(value)} keyboardType="number-pad" selectTextOnFocus
+        onCommit={(t) => { const v = parseInt(t, 10); onChange(Number.isFinite(v) ? Math.max(min, Math.min(999, v)) : value); }}
+        style={[styles.text, { minWidth: 38, textAlign: 'center', fontWeight: '700', paddingVertical: 6, borderRadius: 8, backgroundColor: colors.surfaceAlt }]} />
       <IconBtn label="+" onPress={() => onChange(value + 1)} />
     </View>
   );

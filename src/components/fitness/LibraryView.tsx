@@ -7,7 +7,8 @@ import { EQUIPMENT, EQUIPMENT_LABEL, equipmentDetail, type Equipment } from '../
 import { listBrands, type Brand } from '../../repo/brands';
 import { allE1rmSeries } from '../../repo/stats';
 import { LineChart } from '../LineChart';
-import { MUSCLES, MUSCLE_LABEL, type Muscle } from '../../data/muscles';
+import { EquipmentText } from '../EquipmentText';
+import { groupOf, MUSCLE_GROUPS, MUSCLE_LABEL } from '../../data/muscles';
 import { listExercises, type Exercise } from '../../repo/exercises';
 import { colors } from '../../theme/colors';
 
@@ -17,7 +18,7 @@ export function LibraryView() {
   const db = useSQLiteContext();
   const [items, setItems] = useState<Exercise[]>([]);
   const [query, setQuery] = useState('');
-  const [muscle, setMuscle] = useState<Muscle | null>(null);
+  const [muscle, setMuscle] = useState<string | null>(null);
   const [equipment, setEquipment] = useState<Equipment | null>(null);
   const [sub, setSub] = useState<string | null>(null);
   const [sort, setSort] = useState<Sort>('name');
@@ -34,11 +35,11 @@ export function LibraryView() {
     const q = query.trim().toLowerCase();
     const list = items.filter((e) =>
       (!q || e.name.toLowerCase().includes(q)) &&
-      (!muscle || e.primaryMuscle === muscle || e.secondaryMuscles.includes(muscle)) &&
+      (!muscle || groupOf(e.primaryMuscle) === muscle || e.secondaryMuscles.some((m) => groupOf(m) === muscle)) &&
       (!equipment || e.equipment === equipment) &&
       (!sub || subParts(e).includes(sub)));
     const key = (e: Exercise) =>
-      sort === 'muscle' ? MUSCLE_LABEL[e.primaryMuscle] : sort === 'equipment' ? EQUIPMENT_LABEL[e.equipment] : '';
+      sort === 'muscle' ? `${groupOf(e.primaryMuscle)} ${MUSCLE_LABEL[e.primaryMuscle]}` : sort === 'equipment' ? EQUIPMENT_LABEL[e.equipment] : '';
     return list.sort((a, b) => key(a).localeCompare(key(b)) || a.name.localeCompare(b.name));
   }, [items, query, muscle, equipment, sort, sub, subParts]);
 
@@ -62,8 +63,8 @@ export function LibraryView() {
         </View>
         <ChipRow>
           <Chip label="All muscles" active={!muscle} onPress={() => setMuscle(null)} />
-          {MUSCLES.map((m) => (
-            <Chip key={m} label={MUSCLE_LABEL[m]} active={muscle === m} onPress={() => setMuscle(muscle === m ? null : m)} />
+          {Object.keys(MUSCLE_GROUPS).map((m) => (
+            <Chip key={m} label={m} active={muscle === m} onPress={() => setMuscle(muscle === m ? null : m)} />
           ))}
         </ChipRow>
         <ChipRow>
@@ -99,12 +100,9 @@ export function LibraryView() {
             <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={styles.text}>
               {item.name}
-              {!item.builtinKey && <Text style={{ color: colors.accent, fontSize: 12 }}>  CUSTOM</Text>}
+              
             </Text>
-            <Text style={styles.dim}>
-              {MUSCLE_LABEL[item.primaryMuscle]} · {equipmentDetail(item, brands)}
-              {item.laterality === 'unilateral' ? ' · Unilateral' : ''}
-            </Text>
+            <EquipmentText exercise={item} brands={brands} prefix={MUSCLE_LABEL[item.primaryMuscle]} size={14} />
             </View>
             {(series.get(item.id)?.length ?? 0) >= 2 && (
               <View style={{ width: 72 }}>

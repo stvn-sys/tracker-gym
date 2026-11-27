@@ -1,31 +1,48 @@
+/**
+ * Muscles you can pick for an exercise. Ids of the original muscles are kept so
+ * existing exercises keep working; labels were made more specific.
+ */
 export const MUSCLES = [
-  'chest', 'upper_chest', 'lats', 'rhomboids', 'traps',
-  'front_delts', 'side_delts', 'rear_delts', 'biceps', 'triceps', 'forearms',
-  'abs', 'obliques', 'quads', 'hamstrings', 'glutes', 'calves', 'adductors',
+  'upper_chest', 'chest', 'lower_chest',
+  'front_delts', 'side_delts', 'rear_delts',
+  'lats', 'teres_major', 'traps', 'mid_traps', 'rhomboids', 'lower_back',
+  'biceps', 'brachialis', 'triceps', 'forearms', 'forearm_extensors',
+  'neck',
+  'abs', 'obliques',
+  'hip_flexors', 'glutes', 'glute_medius', 'abductors', 'adductors',
+  'quads', 'hamstrings', 'calves', 'soleus', 'tibialis',
 ] as const;
 export type Muscle = (typeof MUSCLES)[number];
 
 export const MUSCLE_LABEL: Record<Muscle, string> = {
-  chest: 'Chest', upper_chest: 'Upper chest', lats: 'Lats', rhomboids: 'Rhomboids',
-  traps: 'Traps', front_delts: 'Front delts', side_delts: 'Side delts', rear_delts: 'Rear delts',
-  biceps: 'Biceps', triceps: 'Triceps', forearms: 'Forearms', abs: 'Abs', obliques: 'Obliques',
-  quads: 'Quads', hamstrings: 'Hamstrings', glutes: 'Glutes', calves: 'Calves', adductors: 'Adductors',
+  upper_chest: 'Upper chest', chest: 'Mid chest', lower_chest: 'Lower chest',
+  front_delts: 'Front delts', side_delts: 'Side delts', rear_delts: 'Rear delts',
+  lats: 'Lats', teres_major: 'Teres major', traps: 'Upper traps', mid_traps: 'Mid/lower traps', rhomboids: 'Rhomboids', lower_back: 'Lower back',
+  biceps: 'Biceps', brachialis: 'Brachialis', triceps: 'Triceps', forearms: 'Forearm flexors', forearm_extensors: 'Forearm extensors',
+  neck: 'Neck',
+  abs: 'Abs', obliques: 'Obliques',
+  hip_flexors: 'Hip flexors', glutes: 'Glute max', glute_medius: 'Glute medius', abductors: 'Abductors', adductors: 'Adductors',
+  quads: 'Quads', hamstrings: 'Hamstrings', calves: 'Calves (gastrocnemius)', soleus: 'Soleus', tibialis: 'Tibialis',
 };
 
 export { EQUIPMENT, EQUIPMENT_LABEL, type Equipment } from './equipment.ts';
 
-/** Groups used for the radar chart (step 5). */
+/** Muscle groups: specific muscles roll up to these (library filter, picker sections). */
 export const MUSCLE_GROUPS: Record<string, Muscle[]> = {
-  Chest: ['chest', 'upper_chest'],
-  Back: ['lats', 'traps', 'rhomboids', 'rear_delts'],
+  Chest: ['upper_chest', 'chest', 'lower_chest'],
   Shoulders: ['front_delts', 'side_delts', 'rear_delts'],
-  Arms: ['biceps', 'triceps', 'forearms'],
+  Back: ['lats', 'teres_major', 'traps', 'mid_traps', 'rhomboids', 'lower_back'],
+  Arms: ['biceps', 'brachialis', 'triceps', 'forearms', 'forearm_extensors'],
+  Neck: ['neck'],
   Core: ['abs', 'obliques'],
-  Legs: ['quads', 'hamstrings', 'glutes', 'calves', 'adductors'],
+  'Hips & glutes': ['hip_flexors', 'glutes', 'glute_medius', 'abductors', 'adductors'],
+  Legs: ['quads', 'hamstrings', 'calves', 'soleus', 'tibialis'],
 };
 
-/** Two big groups for pickers. Core counts as upper body. */
-export const MUSCLE_REGIONS: { label: string; muscles: Muscle[] }[] = [
-  { label: 'Upper body', muscles: ['chest', 'upper_chest', 'front_delts', 'side_delts', 'rear_delts', 'lats', 'rhomboids', 'traps', 'biceps', 'triceps', 'forearms', 'abs', 'obliques'] },
-  { label: 'Lower body', muscles: ['quads', 'hamstrings', 'glutes', 'adductors', 'calves'] },
-];
+export const groupOf = (m: Muscle) => Object.entries(MUSCLE_GROUPS).find(([, l]) => l.includes(m))?.[0] ?? 'Other';
+
+/** Two big regions for pickers. Abs and obliques count as lower body. */
+export const MUSCLE_REGIONS: { label: string; groups: string[]; muscles: Muscle[] }[] = [
+  { label: 'Upper body', groups: ['Chest', 'Shoulders', 'Back', 'Arms', 'Neck'], muscles: [] },
+  { label: 'Lower body', groups: ['Core', 'Hips & glutes', 'Legs'], muscles: [] },
+].map((r) => ({ ...r, muscles: r.groups.flatMap((g) => MUSCLE_GROUPS[g]) }));

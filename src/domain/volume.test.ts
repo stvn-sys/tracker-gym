@@ -17,3 +17,14 @@ test('mixHex', () => {
   assert.equal(mixHex('#000000', '#ffffff', 0.5), '#808080');
   assert.equal(mixHex('#102030', '#ffffff', 0), '#102030');
 });
+
+test('breakdown lists contributing exercises', async () => {
+  const { volumeBreakdown } = await import('./volume.ts');
+  const b = volumeBreakdown([
+    { name: 'Push', weekdays: [1, 4], exercises: [
+      { exerciseName: 'Bench', primaryMuscle: 'chest', secondaryMuscles: ['triceps'], targetSets: 3 },
+      { exerciseName: 'Pushdown', primaryMuscle: 'triceps', secondaryMuscles: [], targetSets: 2 },
+    ] },
+  ], 'triceps');
+  assert.deepEqual(b.map((x) => [x.exercise, x.sets, x.secondary]), [['Pushdown', 4, false], ['Bench', 3, true]]);
+});

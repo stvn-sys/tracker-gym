@@ -359,11 +359,17 @@ export default function ActiveWorkout() {
                   } },
                   ...(!prefs.autoRest ? [{ label: 'Rest timer', onPress: () => startRest(restFor(we)) }] : []),
                   { label: 'Edit', onPress: () => router.push({ pathname: '/exercise/[id]', params: { id: we.exercise.id } }) },
-                  ...(prevEx && !(we.supersetId && prevEx.supersetId === we.supersetId)
-                    ? [{ label: 'Superset with previous', onPress: async () => { await linkSuperset(db, prevEx, we); setPage(pageOf(prevEx)); reload(); } }] : []),
-                  ...(nextEx && !(we.supersetId && nextEx.supersetId === we.supersetId)
-                    ? [{ label: 'Superset with next', onPress: async () => { await linkSuperset(db, we, nextEx); reload(); } }] : []),
-                  ...(we.supersetId ? [{ label: 'Unlink superset', onPress: async () => { await unlinkSuperset(db, we); reload(); } }] : []),
+                  ...((() => {
+                    const canPrev = prevEx && !(we.supersetId && prevEx.supersetId === we.supersetId);
+                    const canNext = nextEx && !(we.supersetId && nextEx.supersetId === we.supersetId);
+                    if (!canPrev && !canNext && !we.supersetId) return [];
+                    return [{ label: 'Superset', onPress: () => showAlert('Superset', `Do ${we.exercise.name} back to back with another exercise.`, [
+                      ...(canPrev ? [{ text: `With previous · ${prevEx!.exercise.name}`, onPress: async () => { await linkSuperset(db, prevEx!, we); setPage(pageOf(prevEx!)); reload(); } }] : []),
+                      ...(canNext ? [{ text: `With next · ${nextEx!.exercise.name}`, onPress: async () => { await linkSuperset(db, we, nextEx!); reload(); } }] : []),
+                      ...(we.supersetId ? [{ text: 'Unlink superset', style: 'destructive' as const, onPress: async () => { await unlinkSuperset(db, we); reload(); } }] : []),
+                      { text: 'Cancel', style: 'cancel' as const },
+                    ]) }];
+                  })()),
                   { label: 'Swap', onPress: () => setPicker({ kind: 'swap', we }) },
                   { label: we.note || we.exercise.notes ? 'Edit notes' : 'Notes', onPress: () => { setNoteText(we.note ?? ''); setKeepText(we.exercise.notes ?? ''); setNoteFor(we); } },
                   { label: 'Remove', onPress: () => showAlert(`Remove ${we.exercise.name}?`, undefined, [
