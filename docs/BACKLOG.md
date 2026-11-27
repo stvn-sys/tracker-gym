@@ -1,5 +1,10 @@
 # Backlog — for the next version (do when the user asks for a new version)
 
+## Reminders
+- Food logging reminders for breakfast, lunch and dinner (each on/off with its own
+  time, e.g. 09:00 / 13:00 / 19:00); skip a reminder if that meal is already logged.
+  Add to Settings › Reminders and the setup questionnaire.
+
 ## Possibly
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
   RestingHeartRate (lowest sustained overnight value). Ask the user first.
