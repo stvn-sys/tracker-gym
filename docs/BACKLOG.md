@@ -10,6 +10,10 @@
   all exercises with move up/down (or drag); supersets move together. The current
   page follows the exercise you were on. "Save & update routine" keeps the new order.
 
+## Swap in workout builder
+- Workout builder: "Swap" in an exercise's ⋯ menu opens the exercise picker; the new
+  exercise takes the same place, sets, rep range and superset.
+
 ## Possibly
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
   RestingHeartRate (lowest sustained overnight value). Ask the user first.
