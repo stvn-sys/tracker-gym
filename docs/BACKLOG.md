@@ -5,6 +5,11 @@
   single tap = set as primary, double tap = toggle as secondary.
   Show a short hint ("Tap = primary · double-tap = secondary").
 
+## Reorder exercises mid-workout
+- During a workout: "Reorder" (in the exercise ⋯ actions and/or header) opens a list of
+  all exercises with move up/down (or drag); supersets move together. The current
+  page follows the exercise you were on. "Save & update routine" keeps the new order.
+
 ## Possibly
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
   RestingHeartRate (lowest sustained overnight value). Ask the user first.
