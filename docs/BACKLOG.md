@@ -18,8 +18,8 @@
 - Rename equipment "Band" to "Assisted", with sub-options Machine and Band.
   Assisted · Machine shows brand + series (same list as Machine, incl. "Other").
   Weight is logged as assistance (−kg). Move Bodyweight's "Assisted (machine)" /
-  "Assisted (band)" variants here and migrate existing exercises (band resistance
-  exercises stay reps-only under Assisted · Band or become Other — decide on migration).
+  "Assisted (band)" variants here and migrate existing exercises. Non-assisted band
+  exercises (band resistance, e.g. pull-aparts) move to Other.
 
 ## Possibly
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
