@@ -21,6 +21,11 @@
   "Assisted (band)" variants here and migrate existing exercises. Non-assisted band
   exercises (band resistance, e.g. pull-aparts) move to Other.
 
+## Attachments in the exercise editor
+- Attachment field always available for equipment that can have one (with an "Other"
+  chip like brands): typing a new one adds it to that equipment's attachment list in
+  Settings and selects it. Show the field even when the list is still empty.
+
 ## Possibly
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
   RestingHeartRate (lowest sustained overnight value). Ask the user first.
