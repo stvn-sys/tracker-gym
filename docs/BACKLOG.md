@@ -26,6 +26,12 @@
   chip like brands): typing a new one adds it to that equipment's attachment list in
   Settings and selects it. Show the field even when the list is still empty.
 
+## Mini workout bar
+- When you leave an active workout (back / minimize), show a compact bar docked above the
+  tab bar on every tab, like a minimized music player: workout name, elapsed time, current
+  exercise + set (e.g. "Lat Pulldown · set 2/3"), and the rest countdown when resting.
+  Tap it to reopen the workout; small button to finish. Hidden when no workout is active.
+
 ## Possibly
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
   RestingHeartRate (lowest sustained overnight value). Ask the user first.
