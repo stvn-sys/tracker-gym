@@ -14,6 +14,13 @@
 - Workout builder: "Swap" in an exercise's ⋯ menu opens the exercise picker; the new
   exercise takes the same place, sets, rep range and superset.
 
+## Assisted equipment
+- Rename equipment "Band" to "Assisted", with sub-options Machine and Band.
+  Assisted · Machine shows brand + series (same list as Machine, incl. "Other").
+  Weight is logged as assistance (−kg). Move Bodyweight's "Assisted (machine)" /
+  "Assisted (band)" variants here and migrate existing exercises (band resistance
+  exercises stay reps-only under Assisted · Band or become Other — decide on migration).
+
 ## Possibly
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
   RestingHeartRate (lowest sustained overnight value). Ask the user first.
