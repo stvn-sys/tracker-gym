@@ -37,6 +37,10 @@
   The ⋯ (more) button opens Edit, Swap, Notes, Remove (and Rest timer when auto-rest is off,
   plus Reorder from the backlog). Fits on one line without horizontal scrolling.
 
+## Laterality everywhere
+- Bilateral / Unilateral option for every equipment type (bar, smith, plate, bodyweight,
+  assisted, other too), not only dumbbell/cable/machine.
+
 ## Possibly
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
   RestingHeartRate (lowest sustained overnight value). Ask the user first.
