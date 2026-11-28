@@ -41,6 +41,10 @@
 - Bilateral / Unilateral option for every equipment type (bar, smith, plate, bodyweight,
   assisted, other too), not only dumbbell/cable/machine.
 
+## Machine loading labels
+- Loading chips in the exercise editor: "Pin" and "Plate" (instead of "Pin-loaded (stack)" /
+  "Plate-loaded"). Descriptions under exercises keep "Pin-loaded" / "Plate-loaded".
+
 ## Possibly
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
   RestingHeartRate (lowest sustained overnight value). Ask the user first.
