@@ -32,6 +32,11 @@
   exercise + set (e.g. "Lat Pulldown · set 2/3"), and the rest countdown when resting.
   Tap it to reopen the workout; small button to finish. Hidden when no workout is active.
 
+## Live workout action row
+- Action row under the exercise becomes: Warm-up · Superset · ⋯
+  The ⋯ (more) button opens Edit, Swap, Notes, Remove (and Rest timer when auto-rest is off,
+  plus Reorder from the backlog). Fits on one line without horizontal scrolling.
+
 ## Possibly
 - Resting heart rate from raw HeartRate samples if Fitbit does not write
   RestingHeartRate (lowest sustained overnight value). Ask the user first.
